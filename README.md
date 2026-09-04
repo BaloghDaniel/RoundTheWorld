@@ -14,10 +14,10 @@ round your local park moves you ten kilometres down the road towards Madrid.
 | ----- | ----- | ----- |
 | 0 | Repo, PWA shell, Pages deploy pipeline | done |
 | 1 | Supabase schema, Google login | done |
-| 2 | Strava connection and activity sync | next |
-| 3 | Land-first world route generation | |
-| 4 | Journey map and progress (v1) | |
-| 5 | Goals, streaks, group journeys | |
+| 2 | Strava connection and activity sync | done |
+| 3 | Land-first world route generation | done |
+| 4 | Journey map and progress (v1) | done |
+| 5 | Goals, streaks, group journeys | next |
 
 ## Stack
 
@@ -51,16 +51,35 @@ that development matches the Pages deployment.
 ## Deploying
 
 Pushing to `master` builds and publishes to GitHub Pages. The build reads
-`VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from repository *variables*
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` from repository *variables*
 (Settings → Secrets and variables → Actions → Variables).
 
-## Route data
+## The route
 
-The world route is generated once, offline, by `scripts/build-route.ts` against
-OpenRouteService and committed as a seed migration — the app never calls a
-routing API at runtime. Each leg is routed with `avoid_features: ["ferries"]`
-first; a sea crossing only appears where no land route exists, and is labelled
-as such.
+The route is generated once, offline, and committed — the app never calls a
+routing API at runtime. Each stage is requested with `avoid_features:
+["ferries"]` first, so a crossing only appears where no land route exists.
+Declared crossings are not taken on trust: the build still asks for a road
+route across each one and only draws a sea arc after routing actually fails.
+
+64,381 km, 13 segments. All nine road stages routed with ferries forbidden and
+succeeded, so the route uses no ferry anywhere. Four sea crossings remain, three
+of them confirmed by routing genuinely failing:
+
+| Crossing | Distance | Basis |
+| --- | --- | --- |
+| Singapore → Darwin | 3,355 km | confirmed no road |
+| Sydney → Santiago | 11,346 km | beyond ORS's 6,000 km limit, untested |
+| Turbo → Panama City | 322 km | confirmed no road — the Darién Gap |
+| Halifax → Lisbon | 4,483 km | confirmed no road |
+
+Regenerate and reseed with:
+
+```sh
+node --env-file=.env.local scripts/build-route.ts    # routes it, writes data/
+node scripts/emit-route-asset.ts                     # public/routes/world.json
+node --env-file=.env.local scripts/seed-route.ts     # into Supabase
+```
 
 ## Attribution
 
