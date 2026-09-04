@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from './lib/auth'
 import { fetchJourney, type Journey } from './lib/journey'
+import MapCheck from './routes/MapCheck'
 import Onboarding from './routes/Onboarding'
 import JourneyScreen from './routes/Journey'
 import SignIn from './routes/SignIn'
@@ -36,6 +37,10 @@ export default function App() {
     if (user) void load()
     else setJourney(undefined)
   }, [user, load])
+
+  // ?mapcheck renders the real map component with a synthetic journey and no
+  // session, so the deployed bundle can be diagnosed without signing in.
+  if (new URLSearchParams(window.location.search).has('mapcheck')) return <MapCheck />
 
   if (loading) return <Spinner />
   if (!user) return <SignIn />
