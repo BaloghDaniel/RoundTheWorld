@@ -31,3 +31,6 @@ dev-dist
 
 # ORS response cache for the one-off route build; not build output.
 .ors-cache
+
+# Copied from node_modules by prebuild; not source.
+public/maplibre

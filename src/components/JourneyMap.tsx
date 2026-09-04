@@ -5,6 +5,7 @@ import {
   Marker,
   NavigationControl,
   Popup,
+  setWorkerUrl,
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
@@ -20,6 +21,13 @@ import {
 
 // OpenFreeMap serves OSM vector tiles with no key and no usage limits.
 const STYLE = 'https://tiles.openfreemap.org/styles/positron'
+
+// MapLibre builds its worker URL at runtime, which Vite cannot analyse, so the
+// worker is never emitted and the default URL 404s. Vector tiles are parsed in
+// that worker: without it the style and sprites still load, but the source
+// never finishes and the map renders blank. scripts/sync-maplibre-worker.mjs
+// copies the file into public/ on every build.
+setWorkerUrl(`${import.meta.env.BASE_URL}maplibre/maplibre-gl-worker.mjs`)
 
 // Amber rather than a pure yellow, which disappears against a pale basemap.
 const AHEAD = '#eab308'
