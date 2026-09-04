@@ -12,7 +12,13 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { greatCircle, lineLength, simplify, type Coord } from './lib/geo.ts'
+import {
+  greatCircle,
+  insertSeamVertices,
+  lineLength,
+  simplify,
+  type Coord,
+} from './lib/geo.ts'
 import { NoRouteError, route, TooFarError, UnroutablePointError } from './lib/ors.ts'
 import { WORLD_ROUTE, type Waypoint } from './world-route.ts'
 
@@ -123,7 +129,7 @@ async function main() {
     if (item.kind === 'stage') {
       log(`Routing ${item.name}…`)
       const { coords, distanceM, mode, reason } = await buildStage(item.name, item.waypoints)
-      const thinned = simplify(coords, SIMPLIFY_TOLERANCE_M)
+      const thinned = insertSeamVertices(simplify(coords, SIMPLIFY_TOLERANCE_M))
 
       segments.push({ seq: seq++, name: item.name, mode, reason, distanceM, coords: thinned })
 
@@ -151,7 +157,7 @@ async function main() {
       const result = await route([item.from.at, item.to.at], false)
       // The declaration was wrong: a road (possibly with ferries) exists.
       log(`  ! ${label} is drivable after all — using the road, not a sea arc`)
-      const thinned = simplify(result.coords, SIMPLIFY_TOLERANCE_M)
+      const thinned = insertSeamVertices(simplify(result.coords, SIMPLIFY_TOLERANCE_M))
       segments.push({
         seq: seq++,
         name: label,
@@ -165,7 +171,7 @@ async function main() {
       const unverifiable = err instanceof TooFarError
       if (!(err instanceof NoRouteError) && !unverifiable) throw err
 
-      const coords = greatCircle(item.from.at, item.to.at)
+      const coords = insertSeamVertices(greatCircle(item.from.at, item.to.at))
       const distanceM = lineLength(coords)
       // Be precise about what we actually established. A crossing longer than
       // ORS will attempt was never tested, and saying otherwise would be a

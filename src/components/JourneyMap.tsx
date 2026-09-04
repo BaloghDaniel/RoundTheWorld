@@ -1,5 +1,6 @@
 import {
   GeoJSONSource,
+  LngLatBounds,
   Map as MapLibreMap,
   Marker,
   NavigationControl,
@@ -9,7 +10,13 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
 import { avatarMarker, DEFAULT_AVATAR } from '../lib/avatars'
 import type { Journey } from '../lib/journey'
-import { coveredPortions, loadRoute, type Piece, type RouteAsset } from '../lib/route'
+import {
+  coveredPortions,
+  loadRoute,
+  splitAtSeam,
+  type Piece,
+  type RouteAsset,
+} from '../lib/route'
 
 // OpenFreeMap serves OSM vector tiles with no key and no usage limits.
 const STYLE = 'https://tiles.openfreemap.org/styles/positron'
@@ -29,13 +36,13 @@ type Props = {
 function collection(pieces: Piece[]) {
   return {
     type: 'FeatureCollection' as const,
-    features: pieces
-      .filter((p) => p.coords.length > 1)
-      .map((p) => ({
+    features: pieces.flatMap((p) =>
+      splitAtSeam(p.coords).map((coords) => ({
         type: 'Feature' as const,
         properties: { mode: p.mode },
-        geometry: { type: 'LineString' as const, coordinates: p.coords },
+        geometry: { type: 'LineString' as const, coordinates: coords },
       })),
+    ),
   }
 }
 
@@ -51,12 +58,22 @@ export default function JourneyMap({ journey, focus }: Props) {
     const m = new MapLibreMap({
       container: container.current,
       style: STYLE,
-      center: [journey.position.lon, journey.position.lat],
-      zoom: 3,
+      center: [10, 25],
+      zoom: 0.8,
+      // The whole point is seeing the entire route at once, so do not let the
+      // user zoom out past the world or drift off it vertically.
+      minZoom: 0.5,
+      maxZoom: 12,
       attributionControl: { compact: true },
     })
     map.current = m
     m.addControl(new NavigationControl({ showCompass: false }), 'top-right')
+
+    // MapLibre sizes itself once at construction. Inside a flex column the
+    // container can still be collapsing when that happens, which leaves a
+    // zero-sized canvas and an apparently missing map.
+    const observer = new ResizeObserver(() => m.resize())
+    observer.observe(container.current)
 
     m.on('load', async () => {
       const data = await loadRoute()
@@ -122,9 +139,22 @@ export default function JourneyMap({ journey, focus }: Props) {
       }
 
       drawProgress()
+
+      // Frame the entire route. Segments carry vertices on the date line, so
+      // bounds are taken per drawn run rather than across a seam-spanning line.
+      const bounds = new LngLatBounds()
+      for (const seg of data.segments) {
+        for (const run of splitAtSeam(seg.coords)) {
+          for (const c of run) bounds.extend(c)
+        }
+      }
+      if (!bounds.isEmpty()) {
+        m.fitBounds(bounds, { padding: 24, animate: false })
+      }
     })
 
     return () => {
+      observer.disconnect()
       m.remove()
       map.current = null
       marker.current = null
@@ -155,13 +185,20 @@ export default function JourneyMap({ journey, focus }: Props) {
 
   useEffect(drawProgress, [journey])
 
+  // Deliberately skips the first run: the map opens framed on the whole route,
+  // and only an explicit "centre on me" should pull it in to the marker.
+  const framed = useRef(false)
   useEffect(() => {
+    if (!framed.current) {
+      framed.current = true
+      return
+    }
     map.current?.flyTo({
       center: [journey.position.lon, journey.position.lat],
       zoom: 4,
       speed: 0.8,
     })
-  }, [focus, journey.position.lon, journey.position.lat])
+  }, [focus])
 
   return <div ref={container} className="size-full" />
 }

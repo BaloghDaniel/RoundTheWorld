@@ -119,3 +119,40 @@ export function toWkt(coords: Coord[]) {
   const pairs = coords.map(([lon, lat]) => `${lon.toFixed(5)} ${lat.toFixed(5)}`)
   return `SRID=4326;LINESTRING(${pairs.join(',')})`
 }
+
+/**
+ * Insert vertices exactly on the antimeridian wherever a line crosses it.
+ *
+ * A leg from 179.5°E to 178.2°W is a 1.3° step across the date line, but
+ * stored as a 357.7° jump. Anything interpolating between those two vertices
+ * -- PostGIS included -- travels the long way round the planet instead. Adding
+ * a vertex at each seam keeps every consecutive pair short and unambiguous,
+ * while leaving all longitudes inside the [-180, 180] that geography requires.
+ */
+export function insertSeamVertices(coords: Coord[]): Coord[] {
+  const out: Coord[] = []
+
+  for (let i = 0; i < coords.length; i++) {
+    const cur = coords[i]
+    const prev = coords[i - 1]
+
+    if (prev && Math.abs(cur[0] - prev[0]) > 180) {
+      // Fraction of the step at which the seam is reached, measured the short
+      // way round rather than across the jump.
+      const eastward = cur[0] < prev[0]
+      const span = eastward
+        ? 180 - prev[0] + (180 + cur[0])
+        : 180 + prev[0] + (180 - cur[0])
+      const toSeam = eastward ? 180 - prev[0] : 180 + prev[0]
+      const t = span === 0 ? 0.5 : toSeam / span
+      const lat = prev[1] + (cur[1] - prev[1]) * t
+
+      out.push([eastward ? 180 : -180, lat])
+      out.push([eastward ? -180 : 180, lat])
+    }
+
+    out.push(cur)
+  }
+
+  return out
+}

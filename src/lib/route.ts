@@ -21,6 +21,23 @@ export type RouteAsset = {
 /** A drawable run of route, tagged so land and water can be styled apart. */
 export type Piece = { mode: SegmentMode; coords: Coord[] }
 
+/**
+ * Break a line wherever it steps across the antimeridian.
+ *
+ * The route carries vertices exactly on the date line, so a Pacific crossing
+ * contains a 180 -> -180 pair. That pair is zero distance on the globe but a
+ * full sweep of the map in screen space, and drawing it unsplit sends a line
+ * racing back across the whole world.
+ */
+export function splitAtSeam(coords: Coord[]): Coord[][] {
+  const runs: Coord[][] = [[]]
+  for (let i = 0; i < coords.length; i++) {
+    if (i > 0 && Math.abs(coords[i][0] - coords[i - 1][0]) > 180) runs.push([])
+    runs[runs.length - 1].push(coords[i])
+  }
+  return runs.filter((r) => r.length > 1)
+}
+
 let cached: Promise<RouteAsset> | null = null
 
 /** The route is immutable, so one fetch per page load is plenty. */

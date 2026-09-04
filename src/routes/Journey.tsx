@@ -106,7 +106,7 @@ export default function JourneyScreen({ journey: initial }: { journey: Journey }
         </p>
       )}
 
-      <div className="relative min-h-[45dvh] flex-1 overflow-hidden">
+      <div className="relative min-h-[55dvh] flex-1 overflow-hidden">
         <Suspense
           fallback={<div className="size-full animate-pulse bg-ink-soft" />}
         >

@@ -53,10 +53,6 @@ function fail(step: string, error: { message: string } | null) {
   if (error) throw new Error(`${step}: ${error.message}`)
 }
 
-// Replacing rather than updating keeps a rerun clean; segments and landmarks
-// cascade away with the route.
-fail('delete existing', (await db.from('routes').delete().eq('slug', route.slug)).error)
-
 // One stitched line for drawing the whole route at a glance.
 const whole: Coord[] = []
 for (const s of route.segments) {
@@ -66,22 +62,63 @@ for (const s of route.segments) {
   }
 }
 
-const { data: inserted, error: routeError } = await db
+// Update in place rather than replace. Journeys reference the route and store
+// their start as a distance along it, so deleting and re-inserting would either
+// be refused by the foreign key or silently move everyone who had started.
+const { data: existing } = await db
   .from('routes')
-  .insert({
-    slug: route.slug,
-    name: route.name,
-    kind: 'world',
-    allows_sea: true,
-    total_distance_m: route.totalDistanceM,
-    geom: toWkt(whole),
-  })
-  .select('id')
-  .single()
-fail('insert route', routeError)
+  .select('id, total_distance_m')
+  .eq('slug', route.slug)
+  .maybeSingle()
 
-const routeId = inserted!.id
-console.log(`route ${route.slug} → ${routeId} (${whole.length.toLocaleString()} points)`)
+let routeId: string
+
+if (existing) {
+  const drift = Math.abs(existing.total_distance_m - route.totalDistanceM)
+  if (drift > 1000) {
+    console.warn(
+      `! total distance moved by ${(drift / 1000).toFixed(1)} km. Existing ` +
+        `journeys keep their start_offset_m, so their position will shift.`,
+    )
+  }
+
+  fail(
+    'update route',
+    (
+      await db
+        .from('routes')
+        .update({
+          name: route.name,
+          total_distance_m: route.totalDistanceM,
+          geom: toWkt(whole),
+        })
+        .eq('id', existing.id)
+    ).error,
+  )
+
+  fail('clear segments', (await db.from('route_segments').delete().eq('route_id', existing.id)).error)
+  fail('clear landmarks', (await db.from('route_landmarks').delete().eq('route_id', existing.id)).error)
+  routeId = existing.id
+  console.log(`route ${route.slug} → ${routeId} (updated in place)`)
+} else {
+  const { data: inserted, error: routeError } = await db
+    .from('routes')
+    .insert({
+      slug: route.slug,
+      name: route.name,
+      kind: 'world',
+      allows_sea: true,
+      total_distance_m: route.totalDistanceM,
+      geom: toWkt(whole),
+    })
+    .select('id')
+    .single()
+  fail('insert route', routeError)
+  routeId = inserted!.id
+  console.log(`route ${route.slug} → ${routeId} (created)`)
+}
+
+console.log(`  ${whole.length.toLocaleString()} points on the overview line`)
 
 for (let i = 0; i < route.segments.length; i += SEGMENT_BATCH) {
   const batch = route.segments.slice(i, i + SEGMENT_BATCH).map((s) => ({
