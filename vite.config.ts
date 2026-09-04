@@ -42,6 +42,16 @@ export default defineConfig({
         // readable offline, but cap the cache so it cannot grow without bound.
         runtimeCaching: [
           {
+            // The route never changes, but it is 300 KB: serve it from cache
+            // and refresh in the background so the map draws instantly.
+            urlPattern: /\/routes\/[^/]+\.json$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'route-data',
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
             urlPattern: /^https:\/\/tiles\.openfreemap\.org\/.*/i,
             handler: 'CacheFirst',
             options: {
