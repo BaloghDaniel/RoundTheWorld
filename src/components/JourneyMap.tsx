@@ -200,8 +200,13 @@ export default function JourneyMap({ journey, focus }: Props) {
     })
   }, [focus])
 
-  // Absolutely positioned rather than h-full: the parent is a flex item whose
-  // height comes from flex-grow and min-height, so its `height` is auto and a
-  // percentage height on this child collapses to zero -- an invisible map.
-  return <div ref={container} className="absolute inset-0" />
+  // Positioned inline rather than by class, deliberately.
+  //
+  // MapLibre puts its own `maplibregl-map` class on this element, and that
+  // rule sets `position: relative`. Its stylesheet loads after Tailwind's and
+  // both selectors are a single class, so source order decides and `relative`
+  // beats `.absolute`. The element then has no positioning to give it height,
+  // its only child is the absolutely positioned canvas container, and the map
+  // collapses to zero pixels. An inline style outranks both stylesheets.
+  return <div ref={container} style={{ position: 'absolute', inset: 0 }} />
 }
