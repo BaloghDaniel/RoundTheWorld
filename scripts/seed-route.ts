@@ -2,9 +2,12 @@
 //
 //   node --env-file=.env.local scripts/seed-route.ts
 //
-// Needs SUPABASE_SERVICE_ROLE_KEY, because route tables are readable by
-// signed-in users but writable only by the service role. Run once; it is
-// idempotent, replacing any existing route with the same slug.
+// Needs a secret key, because route tables are readable by signed-in users but
+// writable only by the service role. Run once; it is idempotent, replacing any
+// existing route with the same slug.
+//
+// Supabase's modern secret keys (sb_secret_…) and the legacy service_role JWT
+// both resolve to the same BYPASSRLS role, so either works.
 
 import { createClient } from '@supabase/supabase-js'
 import { readFile } from 'node:fs/promises'
@@ -16,11 +19,13 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SEGMENT_BATCH = 3
 
 const url = process.env.VITE_SUPABASE_URL
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const serviceKey =
+  process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
 if (!url || !serviceKey) {
   throw new Error(
-    'VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in .env.local. ' +
-      'The service role key is in Supabase → Project Settings → API.',
+    'VITE_SUPABASE_URL and SUPABASE_SECRET_KEY must be set in .env.local. ' +
+      'Create a secret key in Supabase → Settings → API Keys. ' +
+      '(SUPABASE_SERVICE_ROLE_KEY is accepted too, for the legacy key.)',
   )
 }
 
