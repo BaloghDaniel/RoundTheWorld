@@ -1,7 +1,8 @@
 export type Coord = [lon: number, lat: number]
+export type SegmentMode = 'road' | 'ferry' | 'sea'
 
 export type RouteSegment = {
-  mode: 'road' | 'ferry' | 'sea'
+  mode: SegmentMode
   reason: string | null
   distanceM: number
   cumStartM: number
@@ -16,6 +17,9 @@ export type RouteAsset = {
   segments: RouteSegment[]
   landmarks: { name: string; country: string; cumM: number; at: Coord }[]
 }
+
+/** A drawable run of route, tagged so land and water can be styled apart. */
+export type Piece = { mode: SegmentMode; coords: Coord[] }
 
 let cached: Promise<RouteAsset> | null = null
 
@@ -40,16 +44,21 @@ function haversine([lon1, lat1]: Coord, [lon2, lat2]: Coord) {
   return 2 * R * Math.asin(Math.sqrt(a))
 }
 
+const lerp = (a: Coord, b: Coord, t: number): Coord => [
+  a[0] + (b[0] - a[0]) * t,
+  a[1] + (b[1] - a[1]) * t,
+]
+
 /**
- * The stretch of route between two distances along it.
+ * The stretch of route between two distances along it, one piece per segment.
  *
  * Walks vertices by true distance rather than taking a fraction of the line in
  * degree space, matching what route_point_at does server-side. Doing it the
  * other way put the drawn line hundreds of kilometres out.
  */
-export function sliceBetween(route: RouteAsset, fromM: number, toM: number): Coord[] {
+export function sliceBetween(route: RouteAsset, fromM: number, toM: number): Piece[] {
   if (toM <= fromM) return []
-  const out: Coord[] = []
+  const pieces: Piece[] = []
 
   for (const seg of route.segments) {
     if (seg.cumEndM <= fromM || seg.cumStartM >= toM) continue
@@ -66,6 +75,7 @@ export function sliceBetween(route: RouteAsset, fromM: number, toM: number): Coo
     const localFrom = Math.max(0, (fromM - seg.cumStartM) * scale)
     const localTo = Math.min(geomLength, (toM - seg.cumStartM) * scale)
 
+    const coords: Coord[] = []
     let walked = 0
     for (let i = 0; i < seg.coords.length; i++) {
       const prevWalked = walked
@@ -77,27 +87,25 @@ export function sliceBetween(route: RouteAsset, fromM: number, toM: number): Coo
       // Cut the first and last vertices to the exact requested distance so the
       // line starts and ends where the marker does.
       if (prevWalked < localFrom && spans[i] > 0) {
-        out.push(lerp(seg.coords[i - 1], seg.coords[i], (localFrom - prevWalked) / spans[i]))
+        coords.push(lerp(seg.coords[i - 1], seg.coords[i], (localFrom - prevWalked) / spans[i]))
       }
       if (walked > localTo && spans[i] > 0) {
-        out.push(lerp(seg.coords[i - 1], seg.coords[i], (localTo - prevWalked) / spans[i]))
+        coords.push(lerp(seg.coords[i - 1], seg.coords[i], (localTo - prevWalked) / spans[i]))
         break
       }
-      out.push(seg.coords[i])
+      coords.push(seg.coords[i])
     }
+
+    if (coords.length > 1) pieces.push({ mode: seg.mode, coords })
   }
 
-  return out
-}
-
-function lerp(a: Coord, b: Coord, t: number): Coord {
-  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+  return pieces
 }
 
 /**
- * The covered part of a journey, as one or two runs.
+ * The covered part of a journey.
  *
- * A journey that has wrapped past the route's end comes back as two pieces —
+ * A journey that has wrapped past the route's end comes back as two runs —
  * start-to-end and beginning-to-here — because a single line would draw a
  * false shortcut straight back across the map.
  */
@@ -105,17 +113,17 @@ export function coveredPortions(
   route: RouteAsset,
   startOffsetM: number,
   travelledM: number,
-): Coord[][] {
+): Piece[] {
   if (travelledM >= route.totalDistanceM) {
-    return [sliceBetween(route, 0, route.totalDistanceM)]
+    return sliceBetween(route, 0, route.totalDistanceM)
   }
 
   const end = startOffsetM + travelledM
   if (end <= route.totalDistanceM) {
-    return [sliceBetween(route, startOffsetM, end)]
+    return sliceBetween(route, startOffsetM, end)
   }
   return [
-    sliceBetween(route, startOffsetM, route.totalDistanceM),
-    sliceBetween(route, 0, end - route.totalDistanceM),
+    ...sliceBetween(route, startOffsetM, route.totalDistanceM),
+    ...sliceBetween(route, 0, end - route.totalDistanceM),
   ]
 }

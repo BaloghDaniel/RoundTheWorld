@@ -7,11 +7,18 @@ import {
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
+import { avatarMarker, DEFAULT_AVATAR } from '../lib/avatars'
 import type { Journey } from '../lib/journey'
-import { coveredPortions, loadRoute, type RouteAsset } from '../lib/route'
+import { coveredPortions, loadRoute, type Piece, type RouteAsset } from '../lib/route'
 
 // OpenFreeMap serves OSM vector tiles with no key and no usage limits.
 const STYLE = 'https://tiles.openfreemap.org/styles/positron'
+
+// Amber rather than a pure yellow, which disappears against a pale basemap.
+const AHEAD = '#eab308'
+const DONE = '#16a34a'
+// A dark casing under both lines keeps them readable over any terrain.
+const CASING = 'rgba(15,23,42,.55)'
 
 type Props = {
   journey: Journey
@@ -19,15 +26,15 @@ type Props = {
   focus?: number
 }
 
-function featureCollection(lines: [number, number][][]) {
+function collection(pieces: Piece[]) {
   return {
     type: 'FeatureCollection' as const,
-    features: lines
-      .filter((coords) => coords.length > 1)
-      .map((coords) => ({
+    features: pieces
+      .filter((p) => p.coords.length > 1)
+      .map((p) => ({
         type: 'Feature' as const,
-        properties: {},
-        geometry: { type: 'LineString' as const, coordinates: coords },
+        properties: { mode: p.mode },
+        geometry: { type: 'LineString' as const, coordinates: p.coords },
       })),
   }
 }
@@ -38,7 +45,6 @@ export default function JourneyMap({ journey, focus }: Props) {
   const marker = useRef<Marker | null>(null)
   const route = useRef<RouteAsset | null>(null)
 
-  // Create the map once. Route geometry is added on load.
   useEffect(() => {
     if (!container.current || map.current) return
 
@@ -56,41 +62,60 @@ export default function JourneyMap({ journey, focus }: Props) {
       const data = await loadRoute()
       route.current = data
 
-      // Land and sea are separate sources so they can be styled differently:
-      // a sea crossing is not a road and should not pretend to be one.
-      const land = data.segments.filter((s) => s.mode === 'road')
-      const water = data.segments.filter((s) => s.mode !== 'road')
+      const whole: Piece[] = data.segments.map((s) => ({ mode: s.mode, coords: s.coords }))
+      m.addSource('ahead', { type: 'geojson', data: collection(whole) })
+      m.addSource('done', { type: 'geojson', data: collection([]) })
 
-      m.addSource('route-land', { type: 'geojson', data: featureCollection(land.map((s) => s.coords)) })
-      m.addSource('route-sea', { type: 'geojson', data: featureCollection(water.map((s) => s.coords)) })
-      m.addSource('covered', { type: 'geojson', data: featureCollection([]) })
+      // Casings first so both routes sit on a dark outline.
+      for (const [id, source] of [
+        ['ahead-casing', 'ahead'],
+        ['done-casing', 'done'],
+      ] as const) {
+        m.addLayer({
+          id,
+          type: 'line',
+          source,
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': CASING, 'line-width': 6 },
+        })
+      }
 
+      // A sea crossing is not a road and should not be drawn as one, whether
+      // or not it has been covered yet.
+      const dash: [number, number] = [2, 1.6]
       m.addLayer({
-        id: 'route-land',
+        id: 'ahead',
         type: 'line',
-        source: 'route-land',
-        paint: { 'line-color': '#94a3b8', 'line-width': 1.5, 'line-opacity': 0.7 },
+        source: 'ahead',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': AHEAD, 'line-width': 3 },
+        filter: ['==', ['get', 'mode'], 'road'],
       })
       m.addLayer({
-        id: 'route-sea',
+        id: 'ahead-sea',
         type: 'line',
-        source: 'route-sea',
-        paint: {
-          'line-color': '#94a3b8',
-          'line-width': 1.5,
-          'line-opacity': 0.6,
-          'line-dasharray': [2, 2],
-        },
+        source: 'ahead',
+        paint: { 'line-color': AHEAD, 'line-width': 3, 'line-dasharray': dash },
+        filter: ['!=', ['get', 'mode'], 'road'],
       })
       m.addLayer({
-        id: 'covered',
+        id: 'done',
         type: 'line',
-        source: 'covered',
-        paint: { 'line-color': '#0284c7', 'line-width': 3.5 },
+        source: 'done',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': DONE, 'line-width': 4 },
+        filter: ['==', ['get', 'mode'], 'road'],
+      })
+      m.addLayer({
+        id: 'done-sea',
+        type: 'line',
+        source: 'done',
+        paint: { 'line-color': DONE, 'line-width': 4, 'line-dasharray': dash },
+        filter: ['!=', ['get', 'mode'], 'road'],
       })
 
       for (const l of data.landmarks) {
-        new Marker({ color: '#64748b', scale: 0.45 })
+        new Marker({ color: '#475569', scale: 0.42 })
           .setLngLat(l.at)
           .setPopup(new Popup({ offset: 12 }).setText(`${l.name}, ${l.country}`))
           .addTo(m)
@@ -111,24 +136,20 @@ export default function JourneyMap({ journey, focus }: Props) {
   function drawProgress() {
     const m = map.current
     const data = route.current
-    if (!m || !data || !m.getSource('covered')) return
+    if (!m || !data || !m.getSource('done')) return
 
-    const source = m.getSource('covered') as GeoJSONSource
+    const source = m.getSource('done') as GeoJSONSource
     source.setData(
-      featureCollection(
-        coveredPortions(data, journey.start_offset_m, journey.travelled_m),
-      ),
+      collection(coveredPortions(data, journey.start_offset_m, journey.travelled_m)),
     )
 
     const at: [number, number] = [journey.position.lon, journey.position.lat]
     if (marker.current) {
       marker.current.setLngLat(at)
     } else {
-      const el = document.createElement('div')
-      el.className =
-        'size-4 rounded-full border-2 border-white bg-marker shadow-[0_0_0_4px_rgba(251,191,36,0.35)]'
-      el.setAttribute('aria-label', 'Your position')
-      marker.current = new Marker({ element: el }).setLngLat(at).addTo(m)
+      marker.current = new Marker({ element: avatarMarker(DEFAULT_AVATAR) })
+        .setLngLat(at)
+        .addTo(m)
     }
   }
 

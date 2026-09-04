@@ -112,6 +112,26 @@ export default function JourneyScreen({ journey: initial }: { journey: Journey }
         >
           <JourneyMap journey={journey} focus={focus} />
         </Suspense>
+        {/* The basemap is light, so the on-map readout is too. */}
+        <div className="pointer-events-none absolute left-3 top-3 rounded-xl border border-black/10 bg-white/90 px-3 py-2 shadow-lg backdrop-blur">
+          <div className="text-lg font-semibold leading-tight text-slate-900">
+            {formatKm(journey.travelled_m)}
+          </div>
+          <div className="text-[11px] text-slate-600">
+            of {formatKm(journey.total_distance_m)} · {pct.toFixed(1)}%
+          </div>
+          <div className="mt-1.5 flex gap-3 text-[10px] text-slate-600">
+            <span className="flex items-center gap-1">
+              <span aria-hidden className="h-0.5 w-4 rounded bg-[#16a34a]" />
+              travelled
+            </span>
+            <span className="flex items-center gap-1">
+              <span aria-hidden className="h-0.5 w-4 rounded bg-[#eab308]" />
+              to go
+            </span>
+          </div>
+        </div>
+
         <button
           type="button"
           onClick={() => setFocus((n) => n + 1)}
