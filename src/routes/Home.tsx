@@ -1,31 +1,69 @@
+import { useEffect, useState } from 'react'
+import { useAuth } from '../lib/auth'
+import { supabase } from '../lib/supabase'
+
+type StravaStatus = {
+  connected: boolean
+  athlete_id: number | null
+  last_sync_at: string | null
+}
+
 const PHASES = [
   { n: 0, title: 'Repo, PWA shell, deploy pipeline', done: true },
-  { n: 1, title: 'Supabase schema and Google login', done: false },
+  { n: 1, title: 'Supabase schema and Google login', done: true },
   { n: 2, title: 'Strava connection and activity sync', done: false },
   { n: 3, title: 'Build the land-first world route', done: false },
   { n: 4, title: 'Journey map and progress', done: false },
 ]
 
 export default function Home() {
+  const { user, signOut } = useAuth()
+  const [strava, setStrava] = useState<StravaStatus | null>(null)
+
+  useEffect(() => {
+    supabase
+      .rpc('my_strava_status')
+      .single<StravaStatus>()
+      .then(({ data }) => setStrava(data))
+  }, [])
+
   return (
-    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col justify-center gap-10 px-6 py-16">
-      <header className="flex items-center gap-4">
+    <main className="mx-auto flex min-h-dvh max-w-2xl flex-col gap-10 px-6 py-12">
+      <header className="flex items-center gap-3">
         <img
           src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
           alt=""
-          className="size-14 rounded-xl"
-          width={56}
-          height={56}
+          className="size-10 rounded-lg"
+          width={40}
+          height={40}
         />
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">
-            RoundTheWorld
-          </h1>
-          <p className="text-sm text-slate-400">
-            Every run and ride, laid end to end across the planet.
-          </p>
+        <h1 className="font-semibold tracking-tight text-white">
+          RoundTheWorld
+        </h1>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-sm text-slate-400">
+            {user?.user_metadata?.full_name ?? user?.email}
+          </span>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+          >
+            Sign out
+          </button>
         </div>
       </header>
+
+      <section className="rounded-xl border border-white/10 bg-ink-soft p-5">
+        <h2 className="text-sm font-medium text-white">Strava</h2>
+        <p className="mt-1 text-sm text-slate-400">
+          {strava === null
+            ? 'Checking…'
+            : strava.connected
+              ? `Connected as athlete ${strava.athlete_id}.`
+              : 'Not connected yet — coming in the next phase.'}
+        </p>
+      </section>
 
       <ol className="space-y-px overflow-hidden rounded-xl border border-white/10">
         {PHASES.map((phase) => (
@@ -52,12 +90,6 @@ export default function Home() {
           </li>
         ))}
       </ol>
-
-      <p className="text-xs leading-relaxed text-slate-500">
-        Phase 0 is live: this page is an installable PWA, deployed from{' '}
-        <code className="text-slate-400">master</code> by GitHub Actions. Add it
-        to your home screen and it will keep working offline.
-      </p>
     </main>
   )
 }

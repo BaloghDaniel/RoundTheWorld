@@ -13,8 +13,8 @@ round your local park moves you ten kilometres down the road towards Madrid.
 | Phase | Scope | State |
 | ----- | ----- | ----- |
 | 0 | Repo, PWA shell, Pages deploy pipeline | done |
-| 1 | Supabase schema, Google login | next |
-| 2 | Strava connection and activity sync | |
+| 1 | Supabase schema, Google login | done |
+| 2 | Strava connection and activity sync | next |
 | 3 | Land-first world route generation | |
 | 4 | Journey map and progress (v1) | |
 | 5 | Goals, streaks, group journeys | |
