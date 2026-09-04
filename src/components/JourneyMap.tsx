@@ -69,6 +69,12 @@ export default function JourneyMap({ journey, focus }: Props) {
     map.current = m
     m.addControl(new NavigationControl({ showCompass: false }), 'top-right')
 
+    // Expose the instance to the ?mapcheck diagnostic so camera state can be
+    // inspected on the deployed build.
+    if (new URLSearchParams(window.location.search).has('mapcheck')) {
+      ;(window as unknown as { __map?: MapLibreMap }).__map = m
+    }
+
     // MapLibre sizes itself once at construction. Inside a flex column the
     // container can still be collapsing when that happens, which leaves a
     // zero-sized canvas and an apparently missing map.
