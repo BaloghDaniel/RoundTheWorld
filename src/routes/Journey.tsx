@@ -108,7 +108,7 @@ export default function JourneyScreen({ journey: initial }: { journey: Journey }
 
       <div className="relative min-h-[55dvh] flex-1 overflow-hidden">
         <Suspense
-          fallback={<div className="size-full animate-pulse bg-ink-soft" />}
+          fallback={<div className="absolute inset-0 animate-pulse bg-ink-soft" />}
         >
           <JourneyMap journey={journey} focus={focus} />
         </Suspense>

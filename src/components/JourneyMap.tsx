@@ -200,5 +200,8 @@ export default function JourneyMap({ journey, focus }: Props) {
     })
   }, [focus])
 
-  return <div ref={container} className="size-full" />
+  // Absolutely positioned rather than h-full: the parent is a flex item whose
+  // height comes from flex-grow and min-height, so its `height` is auto and a
+  // percentage height on this child collapses to zero -- an invisible map.
+  return <div ref={container} className="absolute inset-0" />
 }
