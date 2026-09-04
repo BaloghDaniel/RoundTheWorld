@@ -28,3 +28,6 @@ dev-dist
 *.njsproj
 *.sln
 *.sw?
+
+# ORS response cache for the one-off route build; not build output.
+.ors-cache
