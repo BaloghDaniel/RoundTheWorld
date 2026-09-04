@@ -1,0 +1,12 @@
+project_id = "vdtnjwztjsnolpnetqyx"
+
+[functions.strava-auth-start]
+verify_jwt = true
+
+# Strava redirects the *browser* here, with no Authorization header to offer.
+# Authenticity comes from the HMAC-signed `state` parameter instead.
+[functions.strava-callback]
+verify_jwt = false
+
+[functions.strava-sync]
+verify_jwt = true
