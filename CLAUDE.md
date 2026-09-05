@@ -56,6 +56,9 @@ the names.
   connection state through `my_strava_status()`.
 - **`friendships`**, **`journey_groups`**, **`journey_group_members`** — social
   and group play.
+- **`profiles.is_admin`** — grants the user list on the profile page, served by
+  the `admin-users` function. Only the service role can set it: `UPDATE` on
+  `profiles` is granted per column, deliberately excluding `is_admin` and `id`.
 
 RPCs are the API surface; the client rarely touches tables directly. Definer
 functions are used where a policy alone cannot express the rule, and each one
@@ -99,6 +102,15 @@ reintroduce the bug.
 - **Tag Along banks, never discards.** Nobody's shown position may get more than
   `max_gap_m` (100 km) ahead of the runner furthest back. The leader's extra
   distance stays in `raw_m` and reappears when the party closes up.
+- **Column grants, not a column REVOKE.** The "update own profile" policy lets
+  a user write their own row, and therefore every column on it. A column-level
+  `REVOKE` does *not* close that: Postgres keeps the broader table-wide `UPDATE`
+  grant and the narrow revoke is silently ineffective. `profiles` therefore has
+  no table-wide `UPDATE` grant at all, only an explicit column list. Adding a
+  sensitive column means adding it to that list — or rather, not adding it.
+- **Deleting a user releases their Strava authorisation first.** Dropping our
+  token row alone leaves the athlete counted against the application's
+  connected-athlete limit, which is scarce on a ten-athlete tier.
 - **Colour carries meaning.** Green is covered, amber is remaining, the accent
   is for actions, `danger` is for errors. A progress bar's filled portion is
   covered distance, so it is green. Brand colours (Strava orange, the Google
