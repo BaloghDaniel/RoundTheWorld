@@ -21,8 +21,8 @@ export default function StravaBanner() {
   return (
     <div className="mx-4 mb-2 flex items-center gap-3 rounded-xl border border-[#FC4C02]/40 bg-[#FC4C02]/10 px-4 py-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-white">Connect Strava to start moving</p>
-        <p className="text-xs text-slate-400">
+        <p className="text-sm font-medium text-ink">Connect Strava to start moving</p>
+        <p className="text-xs text-muted">
           We read only the distance, type and date of each activity — never your
           GPS tracks.
         </p>
@@ -36,7 +36,7 @@ export default function StravaBanner() {
         {busy ? 'Redirecting…' : 'Connect'}
       </button>
       {error && (
-        <p role="alert" className="text-xs text-red-300">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       )}

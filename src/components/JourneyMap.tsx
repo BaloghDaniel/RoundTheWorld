@@ -9,6 +9,7 @@ import {
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
 import { runnerMarker } from '../lib/avatars'
+import { useTheme } from '../lib/theme'
 import type { Journey } from '../lib/journey'
 import type { Runner } from '../lib/social'
 import {
@@ -20,7 +21,12 @@ import {
 } from '../lib/route'
 
 // OpenFreeMap serves OSM vector tiles with no key and no usage limits.
-const STYLE = 'https://tiles.openfreemap.org/styles/dark'
+// The basemap follows the app's theme; a dark map under a white UI, or the
+// reverse, reads as a bug.
+const STYLES: Record<'light' | 'dark', string> = {
+  light: 'https://tiles.openfreemap.org/styles/positron',
+  dark: 'https://tiles.openfreemap.org/styles/dark',
+}
 
 // MapLibre builds its worker URL at runtime, which Vite cannot analyse, so the
 // worker is never emitted and the default URL 404s. Vector tiles are parsed in
@@ -32,8 +38,12 @@ setWorkerUrl(`${import.meta.env.BASE_URL}maplibre/maplibre-gl-worker.mjs`)
 // Amber rather than a pure yellow, which disappears against a pale basemap.
 const AHEAD = '#eab308'
 const DONE = '#16a34a'
-// A dark casing under both lines keeps them readable over any terrain.
-const CASING = 'rgba(15,23,42,.55)'
+// A casing separates the route from the terrain, so it has to contrast with
+// the basemap rather than being a fixed colour.
+const CASING: Record<'light' | 'dark', string> = {
+  light: 'rgba(255,255,255,.85)',
+  dark: 'rgba(0,0,0,.65)',
+}
 
 // Zoom levels to step in from the whole-route framing on first load.
 const INITIAL_ZOOM_IN = 1.4
@@ -62,6 +72,7 @@ function collection(pieces: Piece[]) {
 }
 
 export default function JourneyMap({ journey, focus, party, selfId }: Props) {
+  const { resolved } = useTheme()
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibreMap | null>(null)
   const markers = useRef<Map<string, Marker>>(new Map())
@@ -72,7 +83,7 @@ export default function JourneyMap({ journey, focus, party, selfId }: Props) {
 
     const m = new MapLibreMap({
       container: container.current,
-      style: STYLE,
+      style: STYLES[resolved],
       center: [10, 25],
       zoom: 0.8,
       // The whole point is seeing the entire route at once, so do not let the
@@ -98,65 +109,7 @@ export default function JourneyMap({ journey, focus, party, selfId }: Props) {
     m.on('load', async () => {
       const data = await loadRoute(journey.route_id, journey.route_slug)
       route.current = data
-
-      const whole: Piece[] = data.segments.map((s) => ({ mode: s.mode, coords: s.coords }))
-      m.addSource('ahead', { type: 'geojson', data: collection(whole) })
-      m.addSource('done', { type: 'geojson', data: collection([]) })
-
-      // Casings first so both routes sit on a dark outline.
-      for (const [id, source] of [
-        ['ahead-casing', 'ahead'],
-        ['done-casing', 'done'],
-      ] as const) {
-        m.addLayer({
-          id,
-          type: 'line',
-          source,
-          layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': CASING, 'line-width': 6 },
-        })
-      }
-
-      // A sea crossing is not a road and should not be drawn as one, whether
-      // or not it has been covered yet.
-      const dash: [number, number] = [2, 1.6]
-      m.addLayer({
-        id: 'ahead',
-        type: 'line',
-        source: 'ahead',
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': AHEAD, 'line-width': 3 },
-        filter: ['==', ['get', 'mode'], 'road'],
-      })
-      m.addLayer({
-        id: 'ahead-sea',
-        type: 'line',
-        source: 'ahead',
-        paint: { 'line-color': AHEAD, 'line-width': 3, 'line-dasharray': dash },
-        filter: ['!=', ['get', 'mode'], 'road'],
-      })
-      m.addLayer({
-        id: 'done',
-        type: 'line',
-        source: 'done',
-        layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': DONE, 'line-width': 4 },
-        filter: ['==', ['get', 'mode'], 'road'],
-      })
-      m.addLayer({
-        id: 'done-sea',
-        type: 'line',
-        source: 'done',
-        paint: { 'line-color': DONE, 'line-width': 4, 'line-dasharray': dash },
-        filter: ['!=', ['get', 'mode'], 'road'],
-      })
-
-      for (const l of data.landmarks) {
-        new Marker({ color: '#64748b', scale: 0.42 })
-          .setLngLat(l.at)
-          .setPopup(new Popup({ offset: 12 }).setText(`${l.name}, ${l.country}`))
-          .addTo(m)
-      }
+      addRouteLayers(m)
 
       drawProgress()
 
@@ -189,6 +142,71 @@ export default function JourneyMap({ journey, focus, party, selfId }: Props) {
     // Only the initial position matters here; updates are handled below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  /** Route sources, layers and landmark pins. Replayed after a style swap. */
+  function addRouteLayers(m: MapLibreMap) {
+    const data = route.current
+    if (!data || m.getSource('ahead')) return
+
+    const whole: Piece[] = data.segments.map((s) => ({ mode: s.mode, coords: s.coords }))
+    m.addSource('ahead', { type: 'geojson', data: collection(whole) })
+    m.addSource('done', { type: 'geojson', data: collection([]) })
+
+    // Casings first so both routes sit on a dark outline.
+    for (const [id, source] of [
+      ['ahead-casing', 'ahead'],
+      ['done-casing', 'done'],
+    ] as const) {
+      m.addLayer({
+        id,
+        type: 'line',
+        source,
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': CASING[resolved], 'line-width': 6 },
+      })
+    }
+
+    // A sea crossing is not a road and should not be drawn as one, whether
+    // or not it has been covered yet.
+    const dash: [number, number] = [2, 1.6]
+    m.addLayer({
+      id: 'ahead',
+      type: 'line',
+      source: 'ahead',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': AHEAD, 'line-width': 3 },
+      filter: ['==', ['get', 'mode'], 'road'],
+    })
+    m.addLayer({
+      id: 'ahead-sea',
+      type: 'line',
+      source: 'ahead',
+      paint: { 'line-color': AHEAD, 'line-width': 3, 'line-dasharray': dash },
+      filter: ['!=', ['get', 'mode'], 'road'],
+    })
+    m.addLayer({
+      id: 'done',
+      type: 'line',
+      source: 'done',
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': DONE, 'line-width': 4 },
+      filter: ['==', ['get', 'mode'], 'road'],
+    })
+    m.addLayer({
+      id: 'done-sea',
+      type: 'line',
+      source: 'done',
+      paint: { 'line-color': DONE, 'line-width': 4, 'line-dasharray': dash },
+      filter: ['!=', ['get', 'mode'], 'road'],
+    })
+
+    for (const l of data.landmarks) {
+      new Marker({ color: '#64748b', scale: 0.42 })
+        .setLngLat(l.at)
+        .setPopup(new Popup({ offset: 12 }).setText(`${l.name}, ${l.country}`))
+        .addTo(m)
+    }
+  }
 
   function drawProgress() {
     const m = map.current
@@ -244,6 +262,26 @@ export default function JourneyMap({ journey, focus, party, selfId }: Props) {
   }
 
   useEffect(drawProgress, [journey, party, selfId])
+
+  // Swapping the basemap wipes the style, so the route layers and markers have
+  // to be laid down again once the new one has loaded.
+  const firstStyle = useRef(true)
+  useEffect(() => {
+    if (firstStyle.current) {
+      firstStyle.current = false
+      return
+    }
+    const m = map.current
+    if (!m) return
+    m.setStyle(STYLES[resolved])
+    m.once('styledata', () => {
+      markers.current.forEach((mk) => mk.remove())
+      markers.current.clear()
+      addRouteLayers(m)
+      drawProgress()
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolved])
 
   // Deliberately skips the first run: the map opens framed on the whole route,
   // and only an explicit "centre on me" should pull it in to the marker.

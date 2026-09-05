@@ -26,7 +26,7 @@ export default function ConnectStrava({ onConnected }: { onConnected: () => void
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 px-6 py-16">
+    <main className="screen mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 px-6 py-16">
       <div className="flex flex-col items-center gap-5 text-center">
         <img
           src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
@@ -36,10 +36,10 @@ export default function ConnectStrava({ onConnected }: { onConnected: () => void
           height={80}
         />
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-white">
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">
             Connect Strava
           </h1>
-          <p className="text-pretty text-sm leading-relaxed text-slate-400">
+          <p className="text-pretty text-sm leading-relaxed text-muted">
             Your runs and rides are what move you along a route. We read only
             the distance, type and date of each activity — never your GPS
             tracks.
@@ -57,16 +57,16 @@ export default function ConnectStrava({ onConnected }: { onConnected: () => void
       </button>
 
       {error && (
-        <p role="alert" className="text-center text-sm text-red-400">
+        <p role="alert" className="text-center text-sm text-danger">
           {error}
         </p>
       )}
 
-      <div className="flex justify-center gap-4 text-xs text-slate-500">
-        <button type="button" onClick={onConnected} className="underline underline-offset-2 hover:text-slate-300">
+      <div className="flex justify-center gap-4 text-xs text-muted">
+        <button type="button" onClick={onConnected} className="underline underline-offset-2 hover:text-ink">
           I've connected it
         </button>
-        <button type="button" onClick={() => void signOut()} className="underline underline-offset-2 hover:text-slate-300">
+        <button type="button" onClick={() => void signOut()} className="underline underline-offset-2 hover:text-ink">
           Sign out
         </button>
       </div>

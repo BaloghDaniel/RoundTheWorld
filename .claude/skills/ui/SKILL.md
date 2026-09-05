@@ -33,6 +33,17 @@ a screenshot and invisible in the source.
    node .claude/skills/ui/screenshot.mjs "http://localhost:8901/RoundTheWorld/?mapcheck=ui" /tmp/ui-wide.png 1280 900
    ```
 
+   **Check both themes.** The app is white in light and black in dark, so a
+   change verified in one can be invisible or unreadable in the other. Emulate
+   the scheme over CDP with
+   `Emulation.setEmulatedMedia {features:[{name:'prefers-color-scheme',value:'light'|'dark'}]}`.
+
+   **Screens behind a session** can be photographed by injecting one: create a
+   throwaway user with the secret key, sign in for a session object, and set
+   `localStorage['sb-<project-ref>-auth-token']` via
+   `Page.addScriptToEvaluateOnNewDocument` before navigating. That is how the
+   journeys list and profile get verified.
+
    The script reports horizontal overflow, elements clipped outside the
    viewport, and console errors alongside the image. Treat a non-empty
    `clipped` list as a bug, not noise — map markers and controls are already
@@ -82,4 +93,7 @@ before starting. A screen you cannot photograph is a screen you cannot check.
 - **The map is the page.** Cards float over it with the `glass` utility. Do not
   reintroduce borders around the map or panels that push it into a box.
 - **Colour carries meaning.** Green is distance covered, amber is distance
-  still to go. Do not reuse either for anything else.
+  still to go, the accent is for actions, and `danger` is for errors. A
+  progress bar's filled portion is covered distance, so it is green.
+- **Brand colours are not themeable.** Strava orange and the Google button keep
+  fixed foregrounds; a theme token makes their labels vanish in one mode.

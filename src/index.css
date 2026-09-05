@@ -1,37 +1,147 @@
 @import 'tailwindcss';
 
-@theme {
-  --color-ink: #0b1120;
-  --color-ink-soft: #131c31;
-  --color-route: #38bdf8;
-  --color-marker: #fbbf24;
-  --color-done: #22c55e;
-  --color-ahead: #eab308;
+/* ---------------------------------------------------------------- palette
+   White in light, black in dark, and one loud accent that carries every
+   action. Route colours stay green for covered and amber for remaining --
+   they mean progress, not brand, so they must not shift with the theme. */
+
+:root {
+  --c-canvas: #ffffff;
+  --c-surface: #ffffff;
+  --c-raised: #f4f4f5;
+  --c-ink: #09090b;
+  --c-muted: #71717a;
+  --c-hair: rgb(9 9 11 / 0.12);
+  --c-accent: #ff2d55;
+  --c-on-accent: #ffffff;
+  --c-danger: #b91c1c;
+  --c-done: #16a34a;
+  --c-ahead: #f59e0b;
+  --shadow-card: 0 1px 2px rgb(9 9 11 / 0.08), 0 10px 30px rgb(9 9 11 / 0.14);
+  --glass-alpha: 0.88;
+  color-scheme: light;
 }
 
-/* Cards float over the map rather than framing it, so they need their own
-   ground: translucent, blurred, and lifted by a shadow instead of a border. */
-@utility glass {
-  @apply rounded-2xl border border-white/10 bg-ink/75 shadow-2xl shadow-black/40 backdrop-blur-md;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --c-canvas: #000000;
+    --c-surface: #0b0b0c;
+    --c-raised: #18181b;
+    --c-ink: #fafafa;
+    --c-muted: #a1a1aa;
+    --c-hair: rgb(255 255 255 / 0.14);
+    --c-accent: #ff375f;
+    --c-on-accent: #ffffff;
+    --c-danger: #fca5a5;
+    --c-done: #22c55e;
+    --c-ahead: #fbbf24;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.6), 0 10px 30px rgb(0 0 0 / 0.5);
+    --glass-alpha: 0.8;
+    color-scheme: dark;
+  }
 }
 
-/* Small all-caps labels above big numbers - the readout style of a sports
-   watch, which is what most of this screen is. */
-@utility eyebrow {
-  @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400;
-}
-
-@utility readout {
-  @apply font-semibold tabular-nums tracking-tight text-white;
-}
-
-html {
+/* An explicit choice always wins over the system setting. */
+:root[data-theme='dark'] {
+  --c-canvas: #000000;
+  --c-surface: #0b0b0c;
+  --c-raised: #18181b;
+  --c-ink: #fafafa;
+  --c-muted: #a1a1aa;
+  --c-hair: rgb(255 255 255 / 0.14);
+  --c-accent: #ff375f;
+  --c-on-accent: #ffffff;
+  --c-danger: #fca5a5;
+  --c-done: #22c55e;
+  --c-ahead: #fbbf24;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.6), 0 10px 30px rgb(0 0 0 / 0.5);
+  --glass-alpha: 0.8;
   color-scheme: dark;
 }
 
+@theme inline {
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-raised: var(--c-raised);
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-hair: var(--c-hair);
+  --color-accent: var(--c-accent);
+  --color-on-accent: var(--c-on-accent);
+  --color-danger: var(--c-danger);
+  --color-done: var(--c-done);
+  --color-ahead: var(--c-ahead);
+}
+
 body {
-  @apply bg-ink text-slate-200 antialiased;
-  /* Keep content clear of the notch / home indicator when installed. */
+  @apply bg-canvas text-ink antialiased;
+  /* Keep content clear of the notch and the home indicator when installed. */
   padding: env(safe-area-inset-top) env(safe-area-inset-right)
     env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ------------------------------------------------------------- utilities */
+
+/** A card. Solid on its own page, translucent when floating over the map. */
+@utility card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-hair);
+  box-shadow: var(--shadow-card);
+  @apply rounded-2xl;
+}
+
+@utility glass {
+  background: color-mix(in srgb, var(--c-surface) calc(var(--glass-alpha) * 100%), transparent);
+  border: 1px solid var(--c-hair);
+  box-shadow: var(--shadow-card);
+  @apply rounded-2xl backdrop-blur-xl;
+}
+
+/** Small all-caps label above a figure: the readout style of a sports watch. */
+@utility eyebrow {
+  @apply text-[10px] font-bold uppercase tracking-[0.16em] text-muted;
+}
+
+/** The figure itself. Tabular so digits do not jitter as numbers change. */
+@utility readout {
+  @apply font-extrabold tabular-nums tracking-tight text-ink;
+}
+
+/** Primary action. Loud on purpose. */
+@utility btn-accent {
+  background: var(--c-accent);
+  color: var(--c-on-accent);
+  @apply rounded-full px-5 py-3 text-sm font-extrabold uppercase tracking-wide
+    transition active:scale-[0.98] hover:brightness-110
+    disabled:pointer-events-none disabled:opacity-50;
+}
+
+@utility btn-quiet {
+  border: 1px solid var(--c-hair);
+  color: var(--c-ink);
+  @apply rounded-full px-4 py-2.5 text-sm font-semibold transition
+    active:scale-[0.98] hover:bg-raised
+    disabled:pointer-events-none disabled:opacity-50;
+}
+
+@utility field {
+  background: var(--c-raised);
+  border: 1px solid transparent;
+  @apply w-full rounded-xl px-4 py-3 text-sm text-ink outline-none
+    transition placeholder:text-muted focus:border-accent;
+}
+
+/* Screens fade in rather than snapping, which makes moving between them feel
+   continuous instead of like a page load. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@utility screen {
+  animation: rise 0.22s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen { animation: none; }
 }

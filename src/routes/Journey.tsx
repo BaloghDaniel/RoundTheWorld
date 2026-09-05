@@ -15,7 +15,7 @@ function Readout({ label, value, hint }: { label: string; value: string; hint?: 
     <div className="min-w-0">
       <div className="eyebrow">{label}</div>
       <div className="readout truncate text-lg leading-tight">{value}</div>
-      {hint && <div className="truncate text-[11px] text-slate-500">{hint}</div>}
+      {hint && <div className="truncate text-[11px] text-muted">{hint}</div>}
     </div>
   )
 }
@@ -88,8 +88,8 @@ export default function JourneyScreen({
 
   return (
     // The map is the page. Everything else floats above it.
-    <main className="relative h-dvh overflow-hidden">
-      <Suspense fallback={<div className="absolute inset-0 animate-pulse bg-ink-soft" />}>
+    <main className="screen relative h-dvh overflow-hidden">
+      <Suspense fallback={<div className="absolute inset-0 animate-pulse bg-raised" />}>
         <JourneyMap
           journey={journey}
           focus={focus}
@@ -105,7 +105,7 @@ export default function JourneyScreen({
             type="button"
             onClick={onBack}
             aria-label="Back to journeys"
-            className="glass grid size-10 shrink-0 place-items-center text-slate-200 transition hover:bg-white/10"
+            className="glass grid size-10 shrink-0 place-items-center text-ink transition hover:bg-raised"
           >
             <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M15 18 9 12l6-6" />
@@ -114,7 +114,7 @@ export default function JourneyScreen({
 
           <div className="glass min-w-0 flex-1 px-3.5 py-2">
             <div className="eyebrow">{journey.is_loop ? 'Circumnavigation' : 'Goal'}</div>
-            <div className="truncate text-sm font-semibold tracking-tight text-white">
+            <div className="truncate text-sm font-semibold tracking-tight text-ink">
               {title}
             </div>
           </div>
@@ -123,7 +123,7 @@ export default function JourneyScreen({
             type="button"
             onClick={() => void sync()}
             disabled={busy || !strava?.connected}
-            className="glass shrink-0 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wide text-route transition hover:bg-white/10 disabled:opacity-50"
+            className="glass shrink-0 px-3.5 py-2.5 text-xs font-bold uppercase tracking-wide text-accent transition hover:bg-raised disabled:opacity-50"
           >
             {busy ? '…' : 'Sync'}
           </button>
@@ -133,7 +133,7 @@ export default function JourneyScreen({
           {strava && !strava.connected && <StravaBanner />}
 
           {message && (
-            <p role="status" className="glass px-4 py-2.5 text-xs text-amber-200">
+            <p role="status" className="glass px-4 py-2.5 text-xs text-ink">
               {message}
             </p>
           )}
@@ -142,7 +142,7 @@ export default function JourneyScreen({
             <button
               type="button"
               onClick={() => setFocus((n) => n + 1)}
-              className="glass px-3 py-2 text-[11px] font-medium text-slate-200 transition hover:bg-white/10"
+              className="glass px-3 py-2 text-[11px] font-medium text-ink transition hover:bg-raised"
             >
               Centre on me
             </button>
@@ -163,31 +163,29 @@ export default function JourneyScreen({
               <div className="flex items-end justify-between gap-3">
                 <div>
                   <div className="eyebrow">Travelled</div>
-                  <div className="readout text-3xl leading-none">
+                  <div className="readout text-4xl leading-none">
                     {formatKm(journey.travelled_m)}
                   </div>
                 </div>
                 <div className="text-right">
                   {journey.laps > 0 && (
-                    <span className="mr-2 rounded bg-marker/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-marker">
+                    <span className="mr-2 rounded bg-ahead/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ahead">
                       Lap {journey.laps + 1}
                     </span>
                   )}
-                  <span className="readout text-xl">{pct.toFixed(1)}%</span>
+                  <span className="readout text-xl text-accent">{pct.toFixed(1)}%</span>
                 </div>
               </div>
 
               <div
-                className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10"
+                className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-raised"
                 role="progressbar"
                 aria-valuenow={Math.round(pct)}
                 aria-valuemin={0}
                 aria-valuemax={100}
               >
                 <div
-                  className={`h-full rounded-full transition-[width] duration-700 ${
-                    journey.completed ? 'bg-done' : 'bg-ahead'
-                  }`}
+                  className="h-full rounded-full bg-done transition-[width] duration-700"
                   style={{ width: `${pct}%` }}
                 />
               </div>
@@ -231,10 +229,10 @@ export default function JourneyScreen({
             </div>
 
             {group && group.runners.length > 1 && (
-              <div className="space-y-2 border-t border-white/10 pt-3">
+              <div className="space-y-2 border-t border-hair pt-3">
                 <div className="flex items-center justify-between">
                   <span className="eyebrow">Tagging along</span>
-                  <span className="text-[11px] text-slate-500">
+                  <span className="text-[11px] text-muted">
                     {formatKm(group.max_gap_m)} leash
                   </span>
                 </div>
@@ -242,14 +240,14 @@ export default function JourneyScreen({
                   {group.runners.map((r) => (
                     <li key={r.user_id} className="flex items-center gap-2.5">
                       <Avatar name={r.display_name} url={r.avatar_url} size={26} />
-                      <span className="min-w-0 flex-1 truncate text-sm text-slate-200">
+                      <span className="min-w-0 flex-1 truncate text-sm text-ink">
                         {r.display_name}
                         {r.user_id === selfId && (
-                          <span className="ml-1 text-[11px] text-slate-500">you</span>
+                          <span className="ml-1 text-[11px] text-muted">you</span>
                         )}
                       </span>
                       {r.waiting && (
-                        <span className="rounded bg-marker/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-marker">
+                        <span className="rounded bg-ahead/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-ahead">
                           Waiting
                         </span>
                       )}
@@ -258,7 +256,7 @@ export default function JourneyScreen({
                   ))}
                 </ul>
                 {group.runners.some((r) => r.waiting) && (
-                  <p className="text-[11px] leading-relaxed text-slate-400">
+                  <p className="text-[11px] leading-relaxed text-muted">
                     {group.runners.find((r) => r.waiting)?.display_name} is holding at the
                     leash and banking{' '}
                     {formatKm(group.runners.find((r) => r.waiting)?.held_back_m ?? 0)} — it
@@ -269,8 +267,8 @@ export default function JourneyScreen({
             )}
 
             {journey.segment && journey.segment.mode !== 'road' && (
-              <p className="rounded-xl bg-white/5 px-3 py-2 text-[11px] text-slate-400">
-                <span className="font-semibold text-slate-300">At sea.</span>{' '}
+              <p className="rounded-xl bg-raised px-3 py-2 text-[11px] text-muted">
+                <span className="font-semibold text-ink">At sea.</span>{' '}
                 {journey.segment.reason}
               </p>
             )}

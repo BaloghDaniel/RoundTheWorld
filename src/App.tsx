@@ -17,7 +17,7 @@ function Spinner() {
       <span className="sr-only">Loading</span>
       <span
         aria-hidden
-        className="size-6 animate-spin rounded-full border-2 border-white/15 border-t-route"
+        className="size-6 animate-spin rounded-full border-2 border-hair border-t-accent"
       />
     </div>
   )
@@ -68,7 +68,7 @@ export default function App() {
   if (error) {
     return (
       <div className="grid min-h-dvh place-items-center px-6">
-        <p role="alert" className="max-w-sm text-center text-sm text-red-400">
+        <p role="alert" className="max-w-sm text-center text-sm text-danger">
           {error}
         </p>
       </div>

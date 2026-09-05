@@ -21,13 +21,11 @@ const MODE_LABEL: Record<GroupInvite['mode'], string> = {
   scramble: 'Scramble',
 }
 
-function ProgressBar({ pct, done }: { pct: number; done: boolean }) {
+function ProgressBar({ pct }: { pct: number }) {
   return (
-    <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+    <div className="h-1.5 overflow-hidden rounded-full bg-raised">
       <div
-        className={`h-full rounded-full transition-[width] duration-700 ${
-          done ? 'bg-done' : 'bg-ahead'
-        }`}
+        className="h-full rounded-full bg-done transition-[width] duration-700"
         style={{ width: `${Math.min(100, pct)}%` }}
       />
     </div>
@@ -51,22 +49,24 @@ function JourneyCard({
     : `${journey.origin_name} → ${journey.destination_name}`
 
   return (
-    <li className="glass overflow-hidden">
+    <li className="card overflow-hidden">
       <button
         type="button"
         onClick={onOpen}
-        className="block w-full px-4 pt-4 text-left transition hover:bg-white/5"
+        className="block w-full px-4 pt-4 text-left transition hover:bg-raised"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="truncate font-semibold tracking-tight text-white">{title}</div>
-            <div className="eyebrow mt-0.5">
+            <div className="eyebrow">
               {journey.is_loop ? 'Circumnavigation' : 'Goal'}
               {journey.laps > 0 && ` · lap ${journey.laps + 1}`}
             </div>
+            <div className="mt-0.5 truncate text-lg font-extrabold tracking-tight text-ink">
+              {title}
+            </div>
           </div>
           {journey.completed && (
-            <span className="shrink-0 rounded-full bg-done/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-done">
+            <span className="shrink-0 rounded-full bg-done/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-done">
               Done
             </span>
           )}
@@ -74,25 +74,25 @@ function JourneyCard({
 
         <div className="mt-3 flex items-baseline gap-2">
           <span className="readout text-2xl">{formatKm(journey.travelled_m)}</span>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-muted">
             of {formatKm(journey.total_distance_m)} · {pct.toFixed(1)}%
           </span>
         </div>
 
         <div className="mt-2.5">
-          <ProgressBar pct={pct} done={journey.completed} />
+          <ProgressBar pct={pct} />
         </div>
       </button>
 
       <div className="flex items-center justify-between px-4 py-2.5">
-        <span className="text-[11px] text-slate-500">
+        <span className="text-[11px] text-muted">
           Counting from {new Date(journey.activities_from).toLocaleDateString()}
         </span>
         <button
           type="button"
           onClick={onDelete}
           disabled={deleting}
-          className="text-[11px] text-slate-500 transition hover:text-red-400 disabled:opacity-50"
+          className="text-[11px] text-muted transition hover:text-accent disabled:opacity-50"
         >
           {deleting ? 'Deleting…' : 'Delete'}
         </button>
@@ -144,8 +144,8 @@ export default function Journeys({ onOpen, onNew, onProfile }: Props) {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 py-6">
-      <header className="glass flex items-center gap-3 px-3 py-2.5">
+    <main className="screen mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 py-6">
+      <header className="card flex items-center gap-3 px-3 py-2.5">
         <img
           src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
           alt=""
@@ -153,21 +153,21 @@ export default function Journeys({ onOpen, onNew, onProfile }: Props) {
           width={32}
           height={32}
         />
-        <h1 className="min-w-0 flex-1 truncate font-semibold tracking-tight text-white">
+        <h1 className="min-w-0 flex-1 truncate font-semibold tracking-tight text-ink">
           Your journeys
         </h1>
         <button
           type="button"
           onClick={onProfile}
           aria-label="Your profile"
-          className="shrink-0 rounded-full ring-1 ring-white/15 transition hover:ring-white/40"
+          className="shrink-0 rounded-full ring-1 ring-hair transition hover:ring-accent"
         >
           <Avatar name={profile?.display_name} url={profile?.avatar_url} size={34} />
         </button>
       </header>
 
       {error && (
-        <p role="alert" className="glass px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="card px-4 py-3 text-sm text-danger">
           {error}
         </p>
       )}
@@ -177,14 +177,14 @@ export default function Journeys({ onOpen, onNew, onProfile }: Props) {
           <h2 className="eyebrow px-1">Invitations</h2>
           <ul className="space-y-2">
             {invites.map((invite) => (
-              <li key={invite.group_id} className="glass px-4 py-3">
+              <li key={invite.group_id} className="card px-4 py-3">
                 <div className="flex items-center gap-3">
                   <Avatar name={invite.invited_by_name} url={invite.invited_by_avatar} size={36} />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm text-white">
+                    <div className="truncate text-sm text-ink">
                       {invite.invited_by_name} invited you
                     </div>
-                    <div className="truncate text-xs text-slate-500">
+                    <div className="truncate text-xs text-muted">
                       {MODE_LABEL[invite.mode]} · {invite.route_name} ·{' '}
                       {formatKm(invite.total_distance_m)}
                     </div>
@@ -199,7 +199,7 @@ export default function Journeys({ onOpen, onNew, onProfile }: Props) {
                       await load()
                       if (id) onOpen(id)
                     }}
-                    className="flex-1 rounded-xl bg-route px-3 py-2 text-xs font-bold uppercase tracking-wide text-ink"
+                    className="flex-1 rounded-xl btn-accent px-3 py-2 text-xs"
                   >
                     Tag along
                   </button>
@@ -209,7 +209,7 @@ export default function Journeys({ onOpen, onNew, onProfile }: Props) {
                       await respondToGroupInvite(invite.group_id, false, '2026-01-01')
                       await load()
                     }}
-                    className="rounded-xl border border-white/15 px-3 py-2 text-xs text-slate-300"
+                    className="rounded-xl border border-hair px-3 py-2 text-xs text-ink"
                   >
                     Decline
                   </button>
@@ -221,11 +221,11 @@ export default function Journeys({ onOpen, onNew, onProfile }: Props) {
       )}
 
       {journeys === null ? (
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-muted">Loading…</p>
       ) : journeys.length === 0 ? (
-        <div className="glass space-y-3 px-5 py-8 text-center">
-          <p className="font-semibold text-white">No journeys yet</p>
-          <p className="text-pretty text-sm leading-relaxed text-slate-400">
+        <div className="card space-y-3 px-5 py-8 text-center">
+          <p className="font-semibold text-ink">No journeys yet</p>
+          <p className="text-pretty text-sm leading-relaxed text-muted">
             Pick somewhere to run to — a city across the continent, or the whole
             way around the world.
           </p>
@@ -249,7 +249,7 @@ export default function Journeys({ onOpen, onNew, onProfile }: Props) {
       )}
 
       {confirming && (
-        <p className="text-center text-xs text-amber-300">
+        <p className="text-center text-xs text-muted">
           Tap Delete again to remove that journey. Your activities are untouched.
         </p>
       )}
@@ -257,7 +257,7 @@ export default function Journeys({ onOpen, onNew, onProfile }: Props) {
       <button
         type="button"
         onClick={onNew}
-        className="rounded-2xl bg-route px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-ink transition hover:brightness-110"
+        className="rounded-2xl btn-accent w-full transition hover:brightness-110"
       >
         New journey
       </button>

@@ -44,12 +44,12 @@ export default function PlaceSearch({ label, value, onChange, placeholder, empty
   if (value) {
     return (
       <div className="space-y-2">
-        <span className="text-sm font-medium text-slate-200">{label}</span>
-        <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-ink-soft px-4 py-3">
+        <span className="text-sm font-medium text-ink">{label}</span>
+        <div className="flex items-center gap-3 rounded-xl border border-hair bg-raised px-4 py-3">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm text-white">{value.name}</div>
+            <div className="truncate text-sm text-ink">{value.name}</div>
             {value.label && value.label !== value.name && (
-              <div className="truncate text-xs text-slate-500">{value.label}</div>
+              <div className="truncate text-xs text-muted">{value.label}</div>
             )}
           </div>
           <button
@@ -58,7 +58,7 @@ export default function PlaceSearch({ label, value, onChange, placeholder, empty
               onChange(null)
               setQuery('')
             }}
-            className="shrink-0 text-xs text-slate-400 underline underline-offset-2 hover:text-slate-200"
+            className="shrink-0 text-xs text-muted underline underline-offset-2 hover:text-ink"
           >
             Change
           </button>
@@ -70,27 +70,27 @@ export default function PlaceSearch({ label, value, onChange, placeholder, empty
   return (
     <div className="space-y-2">
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-200">{label}</span>
+        <span className="text-sm font-medium text-ink">{label}</span>
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
           autoComplete="off"
-          className="w-full rounded-xl border border-white/15 bg-ink-soft px-4 py-3 text-sm text-white placeholder:text-slate-500"
+          className="w-full rounded-xl border border-hair bg-raised px-4 py-3 text-sm text-ink placeholder:text-muted"
         />
       </label>
 
-      {emptyHint && !query && <p className="text-xs text-slate-500">{emptyHint}</p>}
-      {busy && <p className="text-xs text-slate-500">Searching…</p>}
+      {emptyHint && !query && <p className="text-xs text-muted">{emptyHint}</p>}
+      {busy && <p className="text-xs text-muted">Searching…</p>}
       {error && (
-        <p role="alert" className="text-xs text-red-400">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       )}
 
       {results.length > 0 && (
-        <ul className="divide-y divide-white/5 overflow-hidden rounded-xl border border-white/10">
+        <ul className="divide-y divide-hair overflow-hidden rounded-xl border border-hair">
           {results.map((place) => (
             <li key={`${place.lon},${place.lat},${place.label}`}>
               <button
@@ -99,10 +99,10 @@ export default function PlaceSearch({ label, value, onChange, placeholder, empty
                   onChange(place)
                   setResults([])
                 }}
-                className="w-full bg-ink-soft px-4 py-2.5 text-left transition hover:bg-white/5"
+                className="w-full bg-raised px-4 py-2.5 text-left transition hover:bg-raised"
               >
-                <div className="text-sm text-white">{place.name}</div>
-                <div className="truncate text-xs text-slate-500">{place.label}</div>
+                <div className="text-sm text-ink">{place.name}</div>
+                <div className="truncate text-xs text-muted">{place.label}</div>
               </button>
             </li>
           ))}

@@ -93,17 +93,17 @@ export default function MapCheck() {
 
   return (
     <main className="flex min-h-dvh flex-col">
-      <header className="px-4 py-3 text-sm font-semibold text-white">
+      <header className="px-4 py-3 text-sm font-semibold text-ink">
         Map diagnostic
       </header>
 
       <div data-mapbox className="relative min-h-[55dvh] flex-1 overflow-hidden">
-        <Suspense fallback={<div className="absolute inset-0 animate-pulse bg-ink-soft" />}>
+        <Suspense fallback={<div className="absolute inset-0 animate-pulse bg-raised" />}>
           <JourneyMap journey={FAKE} />
         </Suspense>
       </div>
 
-      <pre className="max-h-[35dvh] overflow-auto border-t border-white/10 bg-black px-3 py-2 text-[11px] leading-relaxed text-green-400">
+      <pre className="max-h-[35dvh] overflow-auto border-t border-hair bg-black px-3 py-2 text-[11px] leading-relaxed text-green-400">
         {report}
       </pre>
     </main>

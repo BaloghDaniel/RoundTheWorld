@@ -77,12 +77,12 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-7 px-6 py-16">
+    <main className="screen mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-7 px-6 py-16">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">
           {onCancel ? 'Start a new journey' : 'Start a journey'}
         </h1>
-        <p className="text-pretty text-sm leading-relaxed text-slate-400">
+        <p className="text-pretty text-sm leading-relaxed text-muted">
           Your runs and rides are laid end to end along real roads. You never
           have to run the route itself — the distance is what counts.
           {onCancel && ' Starting a new journey replaces your current one.'}
@@ -103,12 +103,12 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
             aria-pressed={kind === id}
             className={`rounded-xl border px-3 py-3 text-left transition ${
               kind === id
-                ? 'border-route bg-route/10'
-                : 'border-white/15 bg-ink-soft hover:bg-white/5'
+                ? 'border-accent bg-accent/10'
+                : 'border-hair bg-raised hover:bg-raised'
             }`}
           >
-            <div className="text-sm font-medium text-white">{title}</div>
-            <div className="text-xs text-slate-500">{hint}</div>
+            <div className="text-sm font-medium text-ink">{title}</div>
+            <div className="text-xs text-muted">{hint}</div>
           </button>
         ))}
       </div>
@@ -140,15 +140,15 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
 
       {kind && (
       <label className="block space-y-2">
-        <span className="text-sm font-medium text-slate-200">Count activities from</span>
+        <span className="text-sm font-medium text-ink">Count activities from</span>
         <input
           type="date"
           value={from}
           max={today}
           onChange={(e) => setFrom(e.target.value)}
-          className="w-full rounded-xl border border-white/15 bg-ink-soft px-4 py-3 text-sm text-white [color-scheme:dark]"
+          className="w-full rounded-xl border border-hair bg-raised px-4 py-3 text-sm text-ink [color-scheme:dark]"
         />
-        <span className="block text-xs text-slate-500">
+        <span className="block text-xs text-muted">
           Everything you logged on or after this date counts. Backdate it to
           bring in runs you have already done.
         </span>
@@ -157,7 +157,7 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
 
       {kind === 'goal' && friends.length > 0 && (
         <div className="space-y-2">
-          <span className="text-sm font-medium text-slate-200">Tag along</span>
+          <span className="text-sm font-medium text-ink">Tag along</span>
           <ul className="space-y-2">
             {friends.map((f) => {
               const on = invited.has(f.id)
@@ -175,20 +175,20 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
                     }
                     aria-pressed={on}
                     className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
-                      on ? 'border-route bg-route/10' : 'border-white/15 bg-ink-soft hover:bg-white/5'
+                      on ? 'border-accent bg-accent/10' : 'border-hair bg-raised hover:bg-raised'
                     }`}
                   >
                     <Avatar name={f.display_name} url={f.avatar_url} size={32} />
-                    <span className="min-w-0 flex-1 truncate text-sm text-white">
+                    <span className="min-w-0 flex-1 truncate text-sm text-ink">
                       {f.display_name}
                     </span>
-                    <span className="text-xs text-slate-400">{on ? 'Invited' : 'Invite'}</span>
+                    <span className="text-xs text-muted">{on ? 'Invited' : 'Invite'}</span>
                   </button>
                 </li>
               )
             })}
           </ul>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted">
             You each run the whole distance. If one of you falls more than 100 km
             behind, the runner ahead waits until the party closes up.
           </p>
@@ -196,14 +196,14 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
       )}
 
       {kind === 'world' && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-muted">
           The world route is a loop, so your starting point rotates it. You will
           be placed at the nearest point on the road.
         </p>
       )}
 
       {error && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}
@@ -212,7 +212,7 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
         type="button"
         onClick={() => void begin()}
         disabled={!kind || !!busy || locating || (kind === 'goal' && (!goal || !startPlace))}
-        className="w-full rounded-2xl bg-route px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-ink transition hover:brightness-110 disabled:opacity-60"
+        className="w-full rounded-2xl btn-accent w-full transition hover:brightness-110 disabled:opacity-60"
       >
         {busy ?? (kind ? 'Begin' : 'Choose a journey')}
       </button>
@@ -221,14 +221,14 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
         <button
           type="button"
           onClick={onCancel}
-          className="text-center text-xs text-slate-500 underline underline-offset-2 hover:text-slate-300"
+          className="text-center text-xs text-muted underline underline-offset-2 hover:text-ink"
         >
           Keep my current journey
         </button>
       )}
 
       {kind === 'goal' && goal && startPlace && !busy && (
-        <p className="text-center text-xs text-slate-500">
+        <p className="text-center text-xs text-muted">
           {startPlace.name} → {goal.name}
         </p>
       )}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Avatar from '../components/Avatar'
 import { useAuth } from '../lib/auth'
+import { useTheme, type ThemeChoice } from '../lib/theme'
 import {
   fetchFriends,
   fetchMyProfile,
@@ -26,6 +27,7 @@ const PLANNED_BADGES = [
 
 export default function Profile({ onBack, onFindFriends }: Props) {
   const { user, signOut } = useAuth()
+  const { choice, setChoice } = useTheme()
   const [profile, setProfile] = useState<ProfileRow | null>(null)
   const [friends, setFriends] = useState<Friend[]>([])
   const [name, setName] = useState('')
@@ -82,35 +84,35 @@ export default function Profile({ onBack, onFindFriends }: Props) {
   const outgoing = friends.filter((f) => f.status === 'pending' && f.direction === 'outgoing')
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 py-6">
+    <main className="screen mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 py-6">
       <header className="flex items-center gap-3">
         <button
           type="button"
           onClick={onBack}
           aria-label="Back"
-          className="glass grid size-9 place-items-center text-slate-200 transition hover:bg-white/10"
+          className="card grid size-9 place-items-center text-ink transition hover:bg-raised"
         >
           <svg viewBox="0 0 24 24" className="size-4.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M15 18 9 12l6-6" />
           </svg>
         </button>
-        <h1 className="font-semibold tracking-tight text-white">Profile</h1>
+        <h1 className="font-semibold tracking-tight text-ink">Profile</h1>
         <button
           type="button"
           onClick={() => void signOut()}
-          className="ml-auto rounded-lg border border-white/15 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+          className="ml-auto rounded-lg border border-hair px-3 py-1.5 text-xs text-ink transition hover:bg-raised"
         >
           Sign out
         </button>
       </header>
 
       {error && (
-        <p role="alert" className="glass px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="card px-4 py-3 text-sm text-danger">
           {error}
         </p>
       )}
 
-      <section className="glass flex items-center gap-4 px-4 py-4">
+      <section className="card flex items-center gap-4 px-4 py-4">
         <button
           type="button"
           onClick={() => fileInput.current?.click()}
@@ -119,7 +121,7 @@ export default function Profile({ onBack, onFindFriends }: Props) {
           aria-label="Change avatar"
         >
           <Avatar name={profile?.display_name} url={profile?.avatar_url} size={64} />
-          <span className="absolute -bottom-1 -right-1 grid size-6 place-items-center rounded-full bg-route text-ink">
+          <span className="absolute -bottom-1 -right-1 grid size-6 place-items-center rounded-full bg-accent text-ink">
             <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden>
               <path d="M12 5v14M5 12h14" />
             </svg>
@@ -139,32 +141,51 @@ export default function Profile({ onBack, onFindFriends }: Props) {
             onChange={(e) => setName(e.target.value)}
             onBlur={() => void saveName()}
             placeholder="Your name"
-            className="w-full rounded-lg bg-ink-soft px-3 py-2 text-sm font-semibold text-white"
+            className="w-full rounded-lg bg-raised px-3 py-2 text-sm font-semibold text-ink"
           />
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-muted">
             @{profile?.handle ?? '…'} · {user?.email}
           </div>
-          {busy === 'avatar' && <div className="text-xs text-slate-400">Uploading…</div>}
+          {busy === 'avatar' && <div className="text-xs text-muted">Uploading…</div>}
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="eyebrow px-1">Appearance</h2>
+        <div className="card flex gap-1 p-1">
+          {(['light', 'dark', 'system'] as ThemeChoice[]).map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setChoice(c)}
+              aria-pressed={choice === c}
+              className={`flex-1 rounded-xl px-3 py-2 text-xs font-bold capitalize transition ${
+                choice === c ? 'bg-accent text-on-accent' : 'text-muted hover:bg-raised'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
         </div>
       </section>
 
       <section className="space-y-2">
         <h2 className="eyebrow px-1">Badges</h2>
-        <div className="glass grid grid-cols-2 gap-3 px-4 py-4 sm:grid-cols-4">
+        <div className="card grid grid-cols-2 gap-3 px-4 py-4 sm:grid-cols-4">
           {PLANNED_BADGES.map((b) => (
             <div key={b.name} className="text-center opacity-40">
-              <div className="mx-auto grid size-12 place-items-center rounded-full bg-white/5 ring-1 ring-white/10">
-                <svg viewBox="0 0 24 24" className="size-5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <div className="mx-auto grid size-12 place-items-center rounded-full bg-raised ring-1 ring-hair">
+                <svg viewBox="0 0 24 24" className="size-5 text-muted" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                   <rect x="5" y="11" width="14" height="9" rx="2" />
                   <path d="M8 11V8a4 4 0 0 1 8 0v3" />
                 </svg>
               </div>
-              <div className="mt-1.5 text-[11px] font-medium text-slate-300">{b.name}</div>
-              <div className="text-[10px] leading-tight text-slate-500">{b.hint}</div>
+              <div className="mt-1.5 text-[11px] font-medium text-ink">{b.name}</div>
+              <div className="text-[10px] leading-tight text-muted">{b.hint}</div>
             </div>
           ))}
         </div>
-        <p className="px-1 text-[11px] text-slate-500">
+        <p className="px-1 text-[11px] text-muted">
           Not earned yet — achievements are still to be built.
         </p>
       </section>
@@ -175,7 +196,7 @@ export default function Profile({ onBack, onFindFriends }: Props) {
           <button
             type="button"
             onClick={onFindFriends}
-            className="text-xs font-medium text-route underline underline-offset-2"
+            className="text-xs font-medium text-accent underline underline-offset-2"
           >
             Find friends
           </button>
@@ -184,11 +205,11 @@ export default function Profile({ onBack, onFindFriends }: Props) {
         {incoming.length > 0 && (
           <ul className="space-y-2">
             {incoming.map((f) => (
-              <li key={f.friendship_id} className="glass flex items-center gap-3 px-4 py-3">
+              <li key={f.friendship_id} className="card flex items-center gap-3 px-4 py-3">
                 <Avatar name={f.display_name} url={f.avatar_url} size={36} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm text-white">{f.display_name}</div>
-                  <div className="text-xs text-slate-500">wants to be friends</div>
+                  <div className="truncate text-sm text-ink">{f.display_name}</div>
+                  <div className="text-xs text-muted">wants to be friends</div>
                 </div>
                 <button
                   type="button"
@@ -196,7 +217,7 @@ export default function Profile({ onBack, onFindFriends }: Props) {
                     await respondToFriendRequest(f.friendship_id, true)
                     await load()
                   }}
-                  className="rounded-lg bg-route px-3 py-1.5 text-xs font-bold text-ink"
+                  className="rounded-lg btn-accent px-3 py-1.5 text-xs"
                 >
                   Accept
                 </button>
@@ -206,7 +227,7 @@ export default function Profile({ onBack, onFindFriends }: Props) {
                     await respondToFriendRequest(f.friendship_id, false)
                     await load()
                   }}
-                  className="text-xs text-slate-500 hover:text-slate-300"
+                  className="text-xs text-muted hover:text-ink"
                 >
                   Ignore
                 </button>
@@ -216,17 +237,17 @@ export default function Profile({ onBack, onFindFriends }: Props) {
         )}
 
         {accepted.length === 0 && incoming.length === 0 && outgoing.length === 0 ? (
-          <p className="glass px-4 py-5 text-center text-sm text-slate-400">
+          <p className="card px-4 py-5 text-center text-sm text-muted">
             No friends yet. Find someone to run with.
           </p>
         ) : (
           <ul className="space-y-2">
             {accepted.map((f) => (
-              <li key={f.id} className="glass flex items-center gap-3 px-4 py-3">
+              <li key={f.id} className="card flex items-center gap-3 px-4 py-3">
                 <Avatar name={f.display_name} url={f.avatar_url} size={36} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm text-white">{f.display_name}</div>
-                  <div className="truncate text-xs text-slate-500">@{f.handle}</div>
+                  <div className="truncate text-sm text-ink">{f.display_name}</div>
+                  <div className="truncate text-xs text-muted">@{f.handle}</div>
                 </div>
                 <button
                   type="button"
@@ -234,18 +255,18 @@ export default function Profile({ onBack, onFindFriends }: Props) {
                     await removeFriend(f.id)
                     await load()
                   }}
-                  className="text-xs text-slate-500 transition hover:text-red-400"
+                  className="text-xs text-muted transition hover:text-danger"
                 >
                   Remove
                 </button>
               </li>
             ))}
             {outgoing.map((f) => (
-              <li key={f.friendship_id} className="glass flex items-center gap-3 px-4 py-3 opacity-60">
+              <li key={f.friendship_id} className="card flex items-center gap-3 px-4 py-3 opacity-60">
                 <Avatar name={f.display_name} url={f.avatar_url} size={36} />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm text-white">{f.display_name}</div>
-                  <div className="text-xs text-slate-500">request sent</div>
+                  <div className="truncate text-sm text-ink">{f.display_name}</div>
+                  <div className="text-xs text-muted">request sent</div>
                 </div>
               </li>
             ))}

@@ -58,19 +58,19 @@ export default function FindFriends({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-lg flex-col gap-4 px-4 py-6">
+    <main className="screen mx-auto flex min-h-dvh max-w-lg flex-col gap-4 px-4 py-6">
       <header className="flex items-center gap-3">
         <button
           type="button"
           onClick={onBack}
           aria-label="Back"
-          className="glass grid size-9 place-items-center text-slate-200 transition hover:bg-white/10"
+          className="card grid size-9 place-items-center text-ink transition hover:bg-raised"
         >
           <svg viewBox="0 0 24 24" className="size-4.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M15 18 9 12l6-6" />
           </svg>
         </button>
-        <h1 className="font-semibold tracking-tight text-white">Find friends</h1>
+        <h1 className="font-semibold tracking-tight text-ink">Find friends</h1>
       </header>
 
       <input
@@ -79,18 +79,18 @@ export default function FindFriends({ onBack }: { onBack: () => void }) {
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Search by name or @handle"
         autoComplete="off"
-        className="w-full rounded-2xl border border-white/15 bg-ink-soft px-4 py-3 text-sm text-white placeholder:text-slate-500"
+        className="w-full rounded-2xl border border-hair bg-raised px-4 py-3 text-sm text-ink placeholder:text-muted"
       />
 
       {error && (
-        <p role="alert" className="glass px-4 py-3 text-sm text-red-300">
+        <p role="alert" className="card px-4 py-3 text-sm text-danger">
           {error}
         </p>
       )}
-      {busy && <p className="px-1 text-xs text-slate-500">Searching…</p>}
+      {busy && <p className="px-1 text-xs text-muted">Searching…</p>}
 
       {!busy && query.trim().length >= 2 && results.length === 0 && (
-        <p className="glass px-4 py-5 text-center text-sm text-slate-400">
+        <p className="card px-4 py-5 text-center text-sm text-muted">
           Nobody matching “{query}”.
         </p>
       )}
@@ -100,11 +100,11 @@ export default function FindFriends({ onBack }: { onBack: () => void }) {
           const text = label(user)
           const done = text === 'Friends' || text === 'Requested'
           return (
-            <li key={user.id} className="glass flex items-center gap-3 px-4 py-3">
+            <li key={user.id} className="card flex items-center gap-3 px-4 py-3">
               <Avatar name={user.display_name} url={user.avatar_url} size={38} />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm text-white">{user.display_name}</div>
-                <div className="truncate text-xs text-slate-500">@{user.handle}</div>
+                <div className="truncate text-sm text-ink">{user.display_name}</div>
+                <div className="truncate text-xs text-muted">@{user.handle}</div>
               </div>
               <button
                 type="button"
@@ -112,8 +112,8 @@ export default function FindFriends({ onBack }: { onBack: () => void }) {
                 disabled={done}
                 className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
                   done
-                    ? 'text-slate-500'
-                    : 'bg-route text-ink hover:brightness-110'
+                    ? 'text-muted'
+                    : 'bg-accent text-ink hover:brightness-110'
                 }`}
               >
                 {text}
@@ -123,7 +123,7 @@ export default function FindFriends({ onBack }: { onBack: () => void }) {
         })}
       </ul>
 
-      <p className="px-1 text-[11px] text-slate-500">
+      <p className="px-1 text-[11px] text-muted">
         People are found by name or handle. Email addresses are never searchable.
       </p>
     </main>

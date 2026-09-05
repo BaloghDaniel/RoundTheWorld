@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" fill="#0f172a"/>
-  <g fill="none" stroke="#1e3a5f" stroke-width="10">
+  <rect width="512" height="512" fill="#0a0a0b"/>
+  <g fill="none" stroke="#2f2f36" stroke-width="10">
     <circle cx="256" cy="256" r="150"/>
     <ellipse cx="256" cy="256" rx="60" ry="150"/>
     <ellipse cx="256" cy="256" rx="120" ry="150"/>
     <path d="M112 210h288M112 302h288M106 256h300"/>
   </g>
-  <!-- Travelled portion of the route -->
+  <!-- Travelled portion of the route, in the app's accent -->
   <path d="M140 300 Q 200 200 270 250 T 380 190"
-        fill="none" stroke="#38bdf8" stroke-width="20"
+        fill="none" stroke="#ff2d55" stroke-width="22"
         stroke-linecap="round" stroke-linejoin="round"/>
   <!-- Current position -->
-  <circle cx="380" cy="190" r="30" fill="#0f172a"/>
-  <circle cx="380" cy="190" r="19" fill="#fbbf24"/>
+  <circle cx="380" cy="190" r="31" fill="#0a0a0b"/>
+  <circle cx="380" cy="190" r="20" fill="#ffffff"/>
 </svg>

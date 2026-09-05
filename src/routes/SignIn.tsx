@@ -42,20 +42,22 @@ export default function SignIn() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 px-6 py-16">
+    <main className="screen mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-8 px-6 py-16">
       <div className="flex flex-col items-center gap-5 text-center">
         <img
           src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
           alt=""
-          className="size-20 rounded-2xl"
+          className="size-16 rounded-2xl"
           width={80}
           height={80}
         />
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight text-white">
-            RoundTheWorld
+        <div className="space-y-3">
+          <h1 className="text-[2.6rem] font-extrabold leading-[0.95] tracking-tighter text-ink">
+            Run the
+            <br />
+            <span className="text-accent">whole world</span>
           </h1>
-          <p className="text-pretty text-sm leading-relaxed text-slate-400">
+          <p className="text-pretty text-sm leading-relaxed text-muted">
             Every run and ride you log, laid end to end along real roads. Watch
             yourself cross continents one activity at a time.
           </p>
@@ -66,19 +68,19 @@ export default function SignIn() {
         type="button"
         onClick={handleSignIn}
         disabled={busy}
-        className="flex w-full items-center justify-center gap-3 rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-100 disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-3 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-zinc-900 ring-1 ring-hair transition hover:bg-zinc-100 disabled:opacity-60"
       >
         <GoogleMark />
         {busy ? 'Redirecting…' : 'Continue with Google'}
       </button>
 
       {error && (
-        <p role="alert" className="text-center text-sm text-red-400">
+        <p role="alert" className="text-center text-sm text-danger">
           {error}
         </p>
       )}
 
-      <p className="text-center text-xs leading-relaxed text-slate-500">
+      <p className="text-center text-xs leading-relaxed text-muted">
         You'll connect Strava after signing in. We only read the distance, type
         and date of each activity — never your GPS tracks.
       </p>

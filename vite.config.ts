@@ -20,8 +20,8 @@ export default defineConfig({
         short_name: 'RoundTheWorld',
         description:
           'Lay your Strava runs and rides end to end along a real road route around the world.',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#0a0a0b',
+        background_color: '#0a0a0b',
         display: 'standalone',
         start_url: BASE,
         scope: BASE,

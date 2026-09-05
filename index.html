@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="icon" type="image/svg+xml" href="/RoundTheWorld/favicon.svg" />
     <link rel="apple-touch-icon" href="/RoundTheWorld/apple-touch-icon.png" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="description"
@@ -15,6 +16,13 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Before first paint, so a dark-mode user never sees a white flash.
+      try {
+        var t = localStorage.getItem('rtw.theme')
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t)
+      } catch (e) {}
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

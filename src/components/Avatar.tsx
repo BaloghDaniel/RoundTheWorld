@@ -24,7 +24,7 @@ export default function Avatar({ name, url, size = 40, className = '' }: Props) 
   return (
     <span
       aria-hidden
-      className={`grid shrink-0 place-items-center rounded-full bg-ink-soft font-semibold text-slate-300 ring-1 ring-white/10 ${className}`}
+      className={`grid shrink-0 place-items-center rounded-full bg-raised font-semibold text-ink ring-1 ring-hair ${className}`}
       style={{ width: size, height: size, fontSize: size * 0.36 }}
     >
       {initials(name)}
