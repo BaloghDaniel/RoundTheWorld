@@ -38,15 +38,37 @@ export function splitAtSeam(coords: Coord[]): Coord[][] {
   return runs.filter((r) => r.length > 1)
 }
 
-let cached: Promise<RouteAsset> | null = null
+const cache = new Map<string, Promise<RouteAsset>>()
 
-/** The route is immutable, so one fetch per page load is plenty. */
-export function loadRoute(): Promise<RouteAsset> {
-  cached ??= fetch(`${import.meta.env.BASE_URL}routes/world.json`).then((res) => {
-    if (!res.ok) throw new Error(`Could not load route (${res.status})`)
-    return res.json() as Promise<RouteAsset>
-  })
-  return cached
+/**
+ * Geometry for a route.
+ *
+ * The world route is the same for everyone, so it is a static asset the CDN
+ * and service worker can cache. Goal routes belong to one user and are built
+ * on demand, so they come from the database.
+ */
+export function loadRoute(routeId: string, slug: string): Promise<RouteAsset> {
+  const key = `${slug}:${routeId}`
+  if (!cache.has(key)) {
+    cache.set(
+      key,
+      slug === 'world'
+        ? fetch(`${import.meta.env.BASE_URL}routes/world.json`).then((res) => {
+            if (!res.ok) throw new Error(`Could not load route (${res.status})`)
+            return res.json() as Promise<RouteAsset>
+          })
+        : loadFromDatabase(routeId),
+    )
+  }
+  return cache.get(key)!
+}
+
+async function loadFromDatabase(routeId: string): Promise<RouteAsset> {
+  const { supabase } = await import('./supabase')
+  const { data, error } = await supabase.rpc('route_geometry', { p_route_id: routeId })
+  if (error) throw error
+  if (!data) throw new Error('Route not found')
+  return data as RouteAsset
 }
 
 const R = 6_371_008.8

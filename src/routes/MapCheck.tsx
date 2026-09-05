@@ -7,7 +7,16 @@ const JourneyMap = lazy(() => import('../components/JourneyMap'))
 // component, in the real bundle, without needing a session.
 const FAKE: Journey = {
   journey_id: 'mapcheck',
+  route_id: '00000000-0000-0000-0000-000000000000',
+  route_slug: 'world',
   route_name: 'Around the World',
+  is_loop: true,
+  completed: false,
+  origin_name: null,
+  destination_name: null,
+  remaining_m: 64_180_407,
+  pace_m_per_day: 815,
+  eta: null,
   activities_from: '2026-01-01',
   travelled_m: 201_000,
   total_distance_m: 64_381_407,

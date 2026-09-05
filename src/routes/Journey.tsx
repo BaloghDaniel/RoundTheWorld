@@ -18,7 +18,13 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   )
 }
 
-export default function JourneyScreen({ journey: initial }: { journey: Journey }) {
+export default function JourneyScreen({
+  journey: initial,
+  onNewJourney,
+}: {
+  journey: Journey
+  onNewJourney: () => void
+}) {
   const { user, signOut } = useAuth()
   const [journey, setJourney] = useState(initial)
   const [busy, setBusy] = useState(false)
@@ -61,8 +67,8 @@ export default function JourneyScreen({ journey: initial }: { journey: Journey }
     }
   }
 
-  const pct = (journey.travelled_m / journey.total_distance_m) * 100
-  const remaining = journey.total_distance_m - (journey.travelled_m % journey.total_distance_m)
+  const pct = Math.min(100, (journey.travelled_m / journey.total_distance_m) * 100)
+  const eta = journey.eta ? new Date(journey.eta) : null
 
   return (
     <main className="flex min-h-dvh flex-col">
@@ -83,6 +89,13 @@ export default function JourneyScreen({ journey: initial }: { journey: Journey }
             className="rounded-lg bg-route px-3 py-1.5 text-xs font-medium text-ink transition hover:brightness-110 disabled:opacity-60"
           >
             {busy ? 'Syncing…' : 'Sync'}
+          </button>
+          <button
+            type="button"
+            onClick={onNewJourney}
+            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+          >
+            New
           </button>
           <button
             type="button"
@@ -143,6 +156,11 @@ export default function JourneyScreen({ journey: initial }: { journey: Journey }
 
       <section className="space-y-4 border-t border-white/10 bg-ink px-4 py-4">
         <div>
+          {!journey.is_loop && journey.destination_name && (
+            <div className="mb-1 text-sm font-medium text-white">
+              {journey.origin_name} → {journey.destination_name}
+            </div>
+          )}
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-sm text-slate-400">
               {journey.laps > 0 && (
@@ -179,21 +197,46 @@ export default function JourneyScreen({ journey: initial }: { journey: Journey }
             }
           />
           <Stat
-            label="Next up"
-            value={journey.next?.name ?? 'Home'}
+            label={journey.is_loop ? 'Next up' : 'Destination'}
+            value={
+              journey.is_loop
+                ? (journey.next?.name ?? 'Home')
+                : (journey.destination_name ?? '—')
+            }
+            hint={`${formatKm(journey.remaining_m)} to go`}
+          />
+          <Stat
+            label="Pace"
+            value={`${(journey.pace_m_per_day / 1000).toFixed(1)} km`}
+            hint="per day, so far"
+          />
+          <Stat
+            label={journey.completed ? 'Arrived' : 'Projected'}
+            value={
+              journey.completed
+                ? 'Done'
+                : eta
+                  ? eta.toLocaleDateString(undefined, { year: 'numeric', month: 'short' })
+                  : '—'
+            }
             hint={
-              journey.next
-                ? `${formatKm(journey.next.ahead_m)} to go`
-                : `${formatKm(remaining)} to close the loop`
+              journey.completed
+                ? 'goal reached'
+                : eta
+                  ? 'at this pace'
+                  : 'log an activity'
             }
           />
-          <Stat label="Route" value={formatKm(journey.total_distance_m)} hint="total" />
-          <Stat
-            label="Since"
-            value={new Date(journey.activities_from).toLocaleDateString()}
-            hint="counting from"
-          />
         </div>
+
+        {journey.completed && (
+          <p className="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-200">
+            <span className="font-semibold">You made it.</span>{' '}
+            {journey.destination_name
+              ? `${journey.destination_name} reached in ${formatKm(journey.total_distance_m)}.`
+              : 'Journey complete.'}
+          </p>
+        )}
 
         {journey.segment && journey.segment.mode !== 'road' && (
           <p className="rounded-lg border border-white/10 bg-ink-soft px-3 py-2 text-xs text-slate-400">

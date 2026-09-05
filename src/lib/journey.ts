@@ -2,7 +2,17 @@ import { supabase } from './supabase'
 
 export type Journey = {
   journey_id: string
+  route_id: string
+  route_slug: string
   route_name: string
+  is_loop: boolean
+  completed: boolean
+  origin_name: string | null
+  destination_name: string | null
+  remaining_m: number
+  pace_m_per_day: number
+  /** Projected arrival at the current pace; null until there is any distance. */
+  eta: string | null
   activities_from: string
   travelled_m: number
   total_distance_m: number

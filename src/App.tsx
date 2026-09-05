@@ -23,6 +23,7 @@ export default function App() {
   // undefined = not looked up yet, null = signed in but no journey started.
   const [journey, setJourney] = useState<Journey | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -56,6 +57,20 @@ export default function App() {
   }
 
   if (journey === undefined) return <Spinner />
-  if (journey === null) return <Onboarding onStarted={load} />
-  return <JourneyScreen journey={journey} />
+
+  // No journey yet, or the user asked to start another one. Starting a new
+  // journey retires the old, which start_route_journey enforces.
+  if (journey === null || creating) {
+    return (
+      <Onboarding
+        onStarted={() => {
+          setCreating(false)
+          void load()
+        }}
+        onCancel={journey ? () => setCreating(false) : undefined}
+      />
+    )
+  }
+
+  return <JourneyScreen journey={journey} onNewJourney={() => setCreating(true)} />
 }

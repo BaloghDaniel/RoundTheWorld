@@ -35,6 +35,9 @@ const DONE = '#16a34a'
 // A dark casing under both lines keeps them readable over any terrain.
 const CASING = 'rgba(15,23,42,.55)'
 
+// Zoom levels to step in from the whole-route framing on first load.
+const INITIAL_ZOOM_IN = 1.4
+
 type Props = {
   journey: Journey
   /** Recentre on the marker whenever this changes. */
@@ -90,7 +93,7 @@ export default function JourneyMap({ journey, focus }: Props) {
     observer.observe(container.current)
 
     m.on('load', async () => {
-      const data = await loadRoute()
+      const data = await loadRoute(journey.route_id, journey.route_slug)
       route.current = data
 
       const whole: Piece[] = data.segments.map((s) => ({ mode: s.mode, coords: s.coords }))
@@ -164,6 +167,13 @@ export default function JourneyMap({ journey, focus }: Props) {
       }
       if (!bounds.isEmpty()) {
         m.fitBounds(bounds, { padding: 24, animate: false })
+        // Framing the whole route leaves it small, so step in a little and
+        // centre on the runner. Still shows the shape, but at a readable size.
+        m.easeTo({
+          center: [journey.position.lon, journey.position.lat],
+          zoom: m.getZoom() + INITIAL_ZOOM_IN,
+          duration: 0,
+        })
       }
     })
 
