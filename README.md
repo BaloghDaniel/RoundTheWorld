@@ -17,7 +17,8 @@ round your local park moves you ten kilometres down the road towards Madrid.
 | 2 | Strava connection and activity sync | done |
 | 3 | Land-first world route generation | done |
 | 4 | Journey map and progress (v1) | done |
-| 5 | Goals, streaks, group journeys | next |
+| 5 | City-to-city goals, multiple journeys | done |
+| 6 | Streaks, badges, group journeys | next |
 
 ## Stack
 

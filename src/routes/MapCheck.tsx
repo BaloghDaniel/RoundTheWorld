@@ -2,6 +2,9 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import type { Journey } from '../lib/journey'
 
 const JourneyMap = lazy(() => import('../components/JourneyMap'))
+// ?mapcheck=ui renders the real journey screen with the same fixture, so the
+// layout can be reviewed without a session or any Strava data.
+const JourneyScreen = lazy(() => import('./Journey'))
 
 // A journey with no database behind it, so this page renders the real map
 // component, in the real bundle, without needing a session.
@@ -70,11 +73,20 @@ function measure() {
 
 export default function MapCheck() {
   const [report, setReport] = useState('measuring…')
+  const uiOnly = new URLSearchParams(window.location.search).get('mapcheck') === 'ui'
 
   useEffect(() => {
     const t = setInterval(() => setReport(measure()), 500)
     return () => clearInterval(t)
   }, [])
+
+  if (uiOnly) {
+    return (
+      <Suspense fallback={null}>
+        <JourneyScreen journey={FAKE} onBack={() => {}} />
+      </Suspense>
+    )
+  }
 
   return (
     <main className="flex min-h-dvh flex-col">

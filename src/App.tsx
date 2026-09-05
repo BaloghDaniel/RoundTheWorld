@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from './lib/auth'
 import { fetchJourney, type Journey } from './lib/journey'
+import { fetchStravaStatus, type StravaStatus } from './lib/strava'
+import ConnectStrava from './routes/ConnectStrava'
+import JourneyScreen from './routes/Journey'
+import Journeys from './routes/Journeys'
 import MapCheck from './routes/MapCheck'
 import Onboarding from './routes/Onboarding'
-import JourneyScreen from './routes/Journey'
 import SignIn from './routes/SignIn'
 
 function Spinner() {
@@ -18,26 +21,35 @@ function Spinner() {
   )
 }
 
+type View = { name: 'list' } | { name: 'new' } | { name: 'detail'; id: string }
+
 export default function App() {
   const { user, loading } = useAuth()
-  // undefined = not looked up yet, null = signed in but no journey started.
+  const [strava, setStrava] = useState<StravaStatus | null | undefined>(undefined)
+  const [view, setView] = useState<View>({ name: 'list' })
   const [journey, setJourney] = useState<Journey | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
-  const [creating, setCreating] = useState(false)
 
-  const load = useCallback(async () => {
+  useEffect(() => {
+    if (!user) {
+      setStrava(undefined)
+      return
+    }
+    fetchStravaStatus()
+      .then(setStrava)
+      .catch(() => setStrava(null))
+  }, [user])
+
+  const openJourney = useCallback(async (id: string) => {
+    setJourney(undefined)
+    setView({ name: 'detail', id })
     try {
-      setJourney(await fetchJourney())
+      setJourney(await fetchJourney(id))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load your journey')
+      setError(err instanceof Error ? err.message : 'Could not load that journey')
       setJourney(null)
     }
   }, [])
-
-  useEffect(() => {
-    if (user) void load()
-    else setJourney(undefined)
-  }, [user, load])
 
   // ?mapcheck renders the real map component with a synthetic journey and no
   // session, so the deployed bundle can be diagnosed without signing in.
@@ -56,21 +68,33 @@ export default function App() {
     )
   }
 
-  if (journey === undefined) return <Spinner />
+  if (strava === undefined) return <Spinner />
 
-  // No journey yet, or the user asked to start another one. Starting a new
-  // journey retires the old, which start_route_journey enforces.
-  if (journey === null || creating) {
+  // Nothing to measure a journey with until Strava is connected, so ask for
+  // that first rather than starting a journey that cannot move.
+  if (!strava?.connected) {
+    return <ConnectStrava onConnected={() => void fetchStravaStatus().then(setStrava)} />
+  }
+
+  if (view.name === 'new') {
     return (
       <Onboarding
-        onStarted={() => {
-          setCreating(false)
-          void load()
-        }}
-        onCancel={journey ? () => setCreating(false) : undefined}
+        onStarted={(id) => (id ? void openJourney(id) : setView({ name: 'list' }))}
+        onCancel={() => setView({ name: 'list' })}
       />
     )
   }
 
-  return <JourneyScreen journey={journey} onNewJourney={() => setCreating(true)} />
+  if (view.name === 'detail') {
+    if (journey === undefined) return <Spinner />
+    if (journey === null) {
+      setView({ name: 'list' })
+      return <Spinner />
+    }
+    return <JourneyScreen journey={journey} onBack={() => setView({ name: 'list' })} />
+  }
+
+  return (
+    <Journeys onOpen={(id) => void openJourney(id)} onNew={() => setView({ name: 'new' })} />
+  )
 }

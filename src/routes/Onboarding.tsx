@@ -3,13 +3,13 @@ import PlaceSearch from '../components/PlaceSearch'
 import { createGoalRoute, placeFromCoords, startRouteJourney, type Place } from '../lib/goals'
 import { currentPosition, startJourney } from '../lib/journey'
 
-type Props = { onStarted: () => void; onCancel?: () => void }
+type Props = { onStarted: (journeyId?: string) => void; onCancel?: () => void }
 type Kind = 'world' | 'goal'
 
 const today = new Date().toISOString().slice(0, 10)
 
 export default function Onboarding({ onStarted, onCancel }: Props) {
-  const [kind, setKind] = useState<Kind>('world')
+  const [kind, setKind] = useState<Kind | null>(null)
   // Today by default: a new goal starts from now, not from history.
   const [from, setFrom] = useState(today)
   const [origin, setOrigin] = useState<Place | null>(null)
@@ -39,18 +39,19 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
   async function begin() {
     setError(null)
     try {
+      let journeyId: string
       if (kind === 'world') {
         setBusy('Starting…')
-        await startJourney({ from, lon: startPlace?.lon, lat: startPlace?.lat })
+        journeyId = await startJourney({ from, lon: startPlace?.lon, lat: startPlace?.lat })
       } else {
         if (!startPlace) throw new Error('Choose where you are starting from')
         if (!goal) throw new Error('Choose where you are heading')
         setBusy('Finding a road route…')
         const route = await createGoalRoute(startPlace, goal)
         setBusy('Starting…')
-        await startRouteJourney(route.route_id, from)
+        journeyId = await startRouteJourney(route.route_id, from)
       }
-      onStarted()
+      onStarted(journeyId)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not start your journey')
       setBusy(null)
@@ -94,6 +95,7 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
         ))}
       </div>
 
+      {kind && (
       <PlaceSearch
         label="Starting from"
         value={origin}
@@ -107,6 +109,7 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
               : 'Location unavailable — search for your starting point.'
         }
       />
+      )}
 
       {kind === 'goal' && (
         <PlaceSearch
@@ -117,6 +120,7 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
         />
       )}
 
+      {kind && (
       <label className="block space-y-2">
         <span className="text-sm font-medium text-slate-200">Count activities from</span>
         <input
@@ -131,6 +135,7 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
           bring in runs you have already done.
         </span>
       </label>
+      )}
 
       {kind === 'world' && (
         <p className="text-xs text-slate-500">
@@ -148,10 +153,10 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
       <button
         type="button"
         onClick={() => void begin()}
-        disabled={!!busy || locating || (kind === 'goal' && (!goal || !startPlace))}
-        className="w-full rounded-xl bg-route px-4 py-3 text-sm font-semibold text-ink transition hover:brightness-110 disabled:opacity-60"
+        disabled={!kind || !!busy || locating || (kind === 'goal' && (!goal || !startPlace))}
+        className="w-full rounded-2xl bg-route px-4 py-3.5 text-sm font-bold uppercase tracking-wide text-ink transition hover:brightness-110 disabled:opacity-60"
       >
-        {busy ?? 'Begin'}
+        {busy ?? (kind ? 'Begin' : 'Choose a journey')}
       </button>
 
       {onCancel && (

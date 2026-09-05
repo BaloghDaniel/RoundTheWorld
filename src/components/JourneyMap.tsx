@@ -3,7 +3,6 @@ import {
   LngLatBounds,
   Map as MapLibreMap,
   Marker,
-  NavigationControl,
   Popup,
   setWorkerUrl,
 } from 'maplibre-gl'
@@ -20,7 +19,7 @@ import {
 } from '../lib/route'
 
 // OpenFreeMap serves OSM vector tiles with no key and no usage limits.
-const STYLE = 'https://tiles.openfreemap.org/styles/positron'
+const STYLE = 'https://tiles.openfreemap.org/styles/dark'
 
 // MapLibre builds its worker URL at runtime, which Vite cannot analyse, so the
 // worker is never emitted and the default URL 404s. Vector tiles are parsed in
@@ -78,7 +77,6 @@ export default function JourneyMap({ journey, focus }: Props) {
       attributionControl: { compact: true },
     })
     map.current = m
-    m.addControl(new NavigationControl({ showCompass: false }), 'top-right')
 
     // Expose the instance to the ?mapcheck diagnostic so camera state can be
     // inspected on the deployed build.
@@ -149,7 +147,7 @@ export default function JourneyMap({ journey, focus }: Props) {
       })
 
       for (const l of data.landmarks) {
-        new Marker({ color: '#475569', scale: 0.42 })
+        new Marker({ color: '#64748b', scale: 0.42 })
           .setLngLat(l.at)
           .setPopup(new Popup({ offset: 12 }).setText(`${l.name}, ${l.country}`))
           .addTo(m)

@@ -1,5 +1,23 @@
 import { supabase } from './supabase'
 
+/** What the journeys list needs; a subset of the detail. */
+export type JourneySummary = {
+  journey_id: string
+  route_id: string
+  route_slug: string
+  route_name: string
+  is_loop: boolean
+  completed: boolean
+  origin_name: string | null
+  destination_name: string | null
+  activities_from: string
+  travelled_m: number
+  total_distance_m: number
+  remaining_m: number
+  laps: number
+  created_at: string
+}
+
 export type Journey = {
   journey_id: string
   route_id: string
@@ -25,11 +43,23 @@ export type Journey = {
   next: { name: string; country: string; ahead_m: number } | null
 }
 
-/** null when the user has not started a journey yet. */
-export async function fetchJourney(): Promise<Journey | null> {
-  const { data, error } = await supabase.rpc('my_journey')
+/** Summary of every journey the user has, newest first. */
+export async function fetchJourneys(): Promise<JourneySummary[]> {
+  const { data, error } = await supabase.rpc('my_journeys')
+  if (error) throw error
+  return (data as JourneySummary[]) ?? []
+}
+
+/** Full detail for one journey, or null if it is gone. */
+export async function fetchJourney(id: string): Promise<Journey | null> {
+  const { data, error } = await supabase.rpc('journey_detail', { p_journey_id: id })
   if (error) throw error
   return (data as Journey | null) ?? null
+}
+
+export async function deleteJourney(id: string): Promise<void> {
+  const { error } = await supabase.rpc('delete_journey', { p_journey_id: id })
+  if (error) throw error
 }
 
 export async function startJourney(opts: {

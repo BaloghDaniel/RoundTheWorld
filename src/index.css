@@ -1,10 +1,28 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-ink: #0f172a;
-  --color-ink-soft: #16233d;
+  --color-ink: #0b1120;
+  --color-ink-soft: #131c31;
   --color-route: #38bdf8;
   --color-marker: #fbbf24;
+  --color-done: #22c55e;
+  --color-ahead: #eab308;
+}
+
+/* Cards float over the map rather than framing it, so they need their own
+   ground: translucent, blurred, and lifted by a shadow instead of a border. */
+@utility glass {
+  @apply rounded-2xl border border-white/10 bg-ink/75 shadow-2xl shadow-black/40 backdrop-blur-md;
+}
+
+/* Small all-caps labels above big numbers - the readout style of a sports
+   watch, which is what most of this screen is. */
+@utility eyebrow {
+  @apply text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400;
+}
+
+@utility readout {
+  @apply font-semibold tabular-nums tracking-tight text-white;
 }
 
 html {
