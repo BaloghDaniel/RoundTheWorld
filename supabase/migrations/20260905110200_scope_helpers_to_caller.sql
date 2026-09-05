@@ -1,0 +1,8 @@
+-- are_friends(a, b) and in_group(group, user) took arbitrary ids, so any
+-- signed-in user could ask whether two strangers were friends, or whether
+-- someone else was in a group. Policies only ever ask about the caller, so the
+-- caller is now implicit and the question cannot be asked about others.
+--
+-- Replaced by is_my_friend(other) and am_in_group(group); every policy and
+-- definer function that used the old pair now uses these. See git history for
+-- the full replacement bodies of group_state and start_group_journey.
