@@ -62,6 +62,7 @@ async function rpc<T>(name: string, args?: Record<string, unknown>): Promise<T> 
 }
 
 export const fetchMyProfile = () => rpc<Profile>('my_profile')
+export const amIAdmin = () => rpc<boolean>('am_i_admin')
 export const searchUsers = (q: string) => rpc<SearchResult[]>('search_users', { p_query: q })
 export const fetchFriends = () => rpc<Friend[]>('my_friends')
 export const sendFriendRequest = (id: string) => rpc<void>('send_friend_request', { p_user_id: id })
@@ -139,3 +140,44 @@ export const initials = (name: string | null | undefined) =>
     .slice(0, 2)
     .map((w) => w[0]?.toUpperCase() ?? '')
     .join('') || '?'
+
+// ------------------------------------------------------------------- admin
+
+export type AdminUser = Profile & {
+  email: string | null
+  is_admin: boolean
+  created_at: string
+  last_sign_in_at: string | null
+  strava_athlete_id: number | null
+  strava_last_sync_at: string | null
+  activities: number
+  journeys: number
+  is_you: boolean
+}
+
+async function adminFetch(init?: RequestInit) {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  if (!token) throw new Error('Not signed in')
+  const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`, {
+    ...init,
+    headers: { Authorization: `Bearer ${token}`, 'content-type': 'application/json', ...init?.headers },
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? 'Request failed')
+  return body
+}
+
+export async function fetchAdminUsers(): Promise<AdminUser[]> {
+  return (await adminFetch()).users
+}
+
+/**
+ * Delete a user and everything of theirs.
+ *
+ * Releases their Strava authorisation first, so the athlete stops counting
+ * against the app's connected-athlete limit; the rest cascades from auth.
+ */
+export async function deleteUser(userId: string): Promise<void> {
+  await adminFetch({ method: 'POST', body: JSON.stringify({ user_id: userId }) })
+}

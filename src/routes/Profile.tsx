@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import AdminUsers from '../components/AdminUsers'
 import Avatar from '../components/Avatar'
 import { useAuth } from '../lib/auth'
 import { useTheme, type ThemeChoice } from '../lib/theme'
 import {
+  amIAdmin,
   fetchFriends,
   fetchMyProfile,
   removeFriend,
@@ -30,6 +32,7 @@ export default function Profile({ onBack, onFindFriends }: Props) {
   const { choice, setChoice } = useTheme()
   const [profile, setProfile] = useState<ProfileRow | null>(null)
   const [friends, setFriends] = useState<Friend[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
   const [name, setName] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -37,10 +40,15 @@ export default function Profile({ onBack, onFindFriends }: Props) {
 
   const load = useCallback(async () => {
     try {
-      const [p, f] = await Promise.all([fetchMyProfile(), fetchFriends()])
+      const [p, f, admin] = await Promise.all([
+        fetchMyProfile(),
+        fetchFriends(),
+        amIAdmin().catch(() => false),
+      ])
       setProfile(p)
       setName(p?.display_name ?? '')
       setFriends(f)
+      setIsAdmin(admin)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load your profile')
     }
@@ -273,6 +281,8 @@ export default function Profile({ onBack, onFindFriends }: Props) {
           </ul>
         )}
       </section>
+
+      {isAdmin && <AdminUsers />}
     </main>
   )
 }
