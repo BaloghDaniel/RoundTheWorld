@@ -4,7 +4,7 @@ A PWA that lays a runner's Strava distance end to end along real road routes.
 Distance is scalar: running 10 km round a local park advances you 10 km down
 the road to Madrid. Activity GPS tracks are never fetched or stored.
 
-Live: https://baloghdaniel.github.io/RoundTheWorld/
+Live: https://baloghdaniel.github.io/roundtheworld/
 Repo: BaloghDaniel/RoundTheWorld · Supabase project `vdtnjwztjsnolpnetqyx` (eu-north-1)
 
 ## Shape of the system
@@ -158,7 +158,7 @@ Do not claim a change works without evidence. Three fixes shipped broken here
 because they were reasoned about rather than run.
 
 - **UI:** follow `.claude/skills/ui/SKILL.md` — build, serve at the
-  `/RoundTheWorld/` base path, screenshot at 430 and 1280 wide in *both*
+  `/roundtheworld/` base path, screenshot at 430 and 1280 wide in *both*
   themes, read the image. `?mapcheck` reports element sizes, canvas dimensions
   and whether MapLibre's stylesheet applied; `?mapcheck=ui` renders the real
   journey screen against a fixture.

@@ -3,9 +3,10 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Project site on GitHub Pages is served from /RoundTheWorld/, so every asset URL
+// Project site on GitHub Pages is served from /roundtheworld/ (the repo name,
+// which is case-sensitive in the URL), so every asset URL
 // and the service worker scope have to be prefixed with it.
-const BASE = '/RoundTheWorld/'
+const BASE = '/roundtheworld/'
 
 export default defineConfig({
   base: BASE,

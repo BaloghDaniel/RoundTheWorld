@@ -19,7 +19,7 @@ a screenshot and invisible in the source.
 2. Make the change.
 3. `npm run build`
 4. Serve the build at the right base path — the app is hard-wired to
-   `/RoundTheWorld/`, so serving `dist` at the web root gives a blank 404:
+   `/roundtheworld/`, so serving `dist` at the web root gives a blank 404:
 
    ```sh
    mkdir -p /tmp/ui-preview && ln -sfn "$PWD/dist" /tmp/ui-preview/RoundTheWorld
@@ -29,8 +29,8 @@ a screenshot and invisible in the source.
 5. Screenshot it at phone and desktop widths and **actually read the images**:
 
    ```sh
-   node .claude/skills/ui/screenshot.mjs "http://localhost:8901/RoundTheWorld/?mapcheck=ui" /tmp/ui-phone.png 430 930
-   node .claude/skills/ui/screenshot.mjs "http://localhost:8901/RoundTheWorld/?mapcheck=ui" /tmp/ui-wide.png 1280 900
+   node .claude/skills/ui/screenshot.mjs "http://localhost:8901/roundtheworld/?mapcheck=ui" /tmp/ui-phone.png 430 930
+   node .claude/skills/ui/screenshot.mjs "http://localhost:8901/roundtheworld/?mapcheck=ui" /tmp/ui-wide.png 1280 900
    ```
 
    **Check both themes.** The app is white in light and black in dark, so a

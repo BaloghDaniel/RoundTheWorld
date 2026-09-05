@@ -39,7 +39,7 @@ cp .env.example .env.local   # fill in once the Supabase project exists
 npm run dev
 ```
 
-The app is served under the `/RoundTheWorld/` base path in every environment so
+The app is served under the `/roundtheworld/` base path in every environment so
 that development matches the Pages deployment.
 
 ## Icons

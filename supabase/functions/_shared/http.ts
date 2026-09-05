@@ -40,5 +40,5 @@ export async function callerId(req: Request): Promise<string | null> {
 
 /** Base URL of the deployed PWA, used for post-OAuth redirects. */
 export function appUrl() {
-  return Deno.env.get('APP_URL') ?? 'https://baloghdaniel.github.io/RoundTheWorld/'
+  return Deno.env.get('APP_URL') ?? 'https://baloghdaniel.github.io/roundtheworld/'
 }
