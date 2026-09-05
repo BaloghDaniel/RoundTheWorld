@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import PlaceSearch from '../components/PlaceSearch'
 import { createGoalRoute, placeFromCoords, startRouteJourney, type Place } from '../lib/goals'
 import { currentPosition, startJourney } from '../lib/journey'
+import Avatar from '../components/Avatar'
+import { fetchFriends, startGroupJourney, type Friend } from '../lib/social'
 
 type Props = { onStarted: (journeyId?: string) => void; onCancel?: () => void }
 type Kind = 'world' | 'goal'
@@ -18,6 +20,8 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
   const [locating, setLocating] = useState(true)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [friends, setFriends] = useState<Friend[]>([])
+  const [invited, setInvited] = useState<Set<string>>(new Set())
 
   // The starting point defaults to where the user actually is. Refusing the
   // permission is fine: the world route then begins at its own origin, and a
@@ -32,6 +36,12 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
     return () => {
       active = false
     }
+  }, [])
+
+  useEffect(() => {
+    fetchFriends()
+      .then((all) => setFriends(all.filter((f) => f.status === 'accepted')))
+      .catch(() => setFriends([]))
   }, [])
 
   const startPlace = origin ?? (here ? placeFromCoords(here.lon, here.lat) : null)
@@ -49,7 +59,15 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
         setBusy('Finding a road route…')
         const route = await createGoalRoute(startPlace, goal)
         setBusy('Starting…')
-        journeyId = await startRouteJourney(route.route_id, from)
+        journeyId =
+          invited.size > 0
+            ? await startGroupJourney({
+                routeId: route.route_id,
+                from,
+                mode: 'tag_along',
+                invitees: [...invited],
+              })
+            : await startRouteJourney(route.route_id, from)
       }
       onStarted(journeyId)
     } catch (err) {
@@ -135,6 +153,46 @@ export default function Onboarding({ onStarted, onCancel }: Props) {
           bring in runs you have already done.
         </span>
       </label>
+      )}
+
+      {kind === 'goal' && friends.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-sm font-medium text-slate-200">Tag along</span>
+          <ul className="space-y-2">
+            {friends.map((f) => {
+              const on = invited.has(f.id)
+              return (
+                <li key={f.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setInvited((prev) => {
+                        const next = new Set(prev)
+                        if (on) next.delete(f.id)
+                        else next.add(f.id)
+                        return next
+                      })
+                    }
+                    aria-pressed={on}
+                    className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
+                      on ? 'border-route bg-route/10' : 'border-white/15 bg-ink-soft hover:bg-white/5'
+                    }`}
+                  >
+                    <Avatar name={f.display_name} url={f.avatar_url} size={32} />
+                    <span className="min-w-0 flex-1 truncate text-sm text-white">
+                      {f.display_name}
+                    </span>
+                    <span className="text-xs text-slate-400">{on ? 'Invited' : 'Invite'}</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          <p className="text-xs text-slate-500">
+            You each run the whole distance. If one of you falls more than 100 km
+            behind, the runner ahead waits until the party closes up.
+          </p>
+        </div>
       )}
 
       {kind === 'world' && (

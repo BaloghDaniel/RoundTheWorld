@@ -8,8 +8,9 @@ import {
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
-import { avatarMarker, DEFAULT_AVATAR } from '../lib/avatars'
+import { runnerMarker } from '../lib/avatars'
 import type { Journey } from '../lib/journey'
+import type { Runner } from '../lib/social'
 import {
   coveredPortions,
   loadRoute,
@@ -41,6 +42,10 @@ type Props = {
   journey: Journey
   /** Recentre on the marker whenever this changes. */
   focus?: number
+  /** Everyone running this route together; the viewer included. */
+  party?: Runner[]
+  /** The viewer, so their own marker can be distinguished. */
+  selfId?: string
 }
 
 function collection(pieces: Piece[]) {
@@ -56,10 +61,10 @@ function collection(pieces: Piece[]) {
   }
 }
 
-export default function JourneyMap({ journey, focus }: Props) {
+export default function JourneyMap({ journey, focus, party, selfId }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<MapLibreMap | null>(null)
-  const marker = useRef<Marker | null>(null)
+  const markers = useRef<Map<string, Marker>>(new Map())
   const route = useRef<RouteAsset | null>(null)
 
   useEffect(() => {
@@ -179,7 +184,7 @@ export default function JourneyMap({ journey, focus }: Props) {
       observer.disconnect()
       m.remove()
       map.current = null
-      marker.current = null
+      markers.current.clear()
     }
     // Only the initial position matters here; updates are handled below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -195,17 +200,50 @@ export default function JourneyMap({ journey, focus }: Props) {
       collection(coveredPortions(data, journey.start_offset_m, journey.travelled_m)),
     )
 
-    const at: [number, number] = [journey.position.lon, journey.position.lat]
-    if (marker.current) {
-      marker.current.setLngLat(at)
-    } else {
-      marker.current = new Marker({ element: avatarMarker(DEFAULT_AVATAR) })
+    // A solo journey is just a party of one, so both cases take the same path.
+    const runners =
+      party && party.length > 0
+        ? party
+        : [{
+            user_id: 'self',
+            display_name: null,
+            avatar_url: null,
+            waiting: false,
+            position: journey.position,
+          } as unknown as Runner]
+
+    const seen = new Set<string>()
+    for (const r of runners) {
+      seen.add(r.user_id)
+      const at: [number, number] = [r.position.lon, r.position.lat]
+      const existing = markers.current.get(r.user_id)
+      if (existing) {
+        existing.setLngLat(at)
+        continue
+      }
+      const marker = new Marker({
+        element: runnerMarker({
+          avatarUrl: r.avatar_url,
+          name: r.display_name,
+          waiting: r.waiting,
+          self: r.user_id === selfId || r.user_id === 'self',
+        }),
+      })
         .setLngLat(at)
         .addTo(m)
+      markers.current.set(r.user_id, marker)
+    }
+
+    // Someone who left the group should not linger on the map.
+    for (const [id, marker] of markers.current) {
+      if (!seen.has(id)) {
+        marker.remove()
+        markers.current.delete(id)
+      }
     }
   }
 
-  useEffect(drawProgress, [journey])
+  useEffect(drawProgress, [journey, party, selfId])
 
   // Deliberately skips the first run: the map opens framed on the whole route,
   // and only an explicit "centre on me" should pull it in to the marker.

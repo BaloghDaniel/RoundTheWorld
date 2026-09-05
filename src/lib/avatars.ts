@@ -24,6 +24,50 @@ const RUNNER = `
 const FIGURES: Record<AvatarId, string> = { runner: RUNNER }
 
 /**
+ * A runner on the map: their avatar if they have one, otherwise the figure.
+ *
+ * Waiting runners are ringed amber rather than moved, because in Tag Along
+ * they are still there -- just held until the party closes up.
+ */
+export function runnerMarker(opts: {
+  avatarUrl?: string | null
+  name?: string | null
+  waiting?: boolean
+  self?: boolean
+  size?: number
+}): HTMLElement {
+  const size = opts.size ?? 38
+  const ring = opts.waiting ? '#fbbf24' : opts.self ? '#ffffff' : '#94a3b8'
+
+  const el = document.createElement('div')
+  el.setAttribute('aria-label', opts.name ?? 'Runner')
+  el.title = opts.name ?? ''
+  el.style.cssText = `
+    width:${size}px;height:${size}px;border-radius:9999px;
+    background:#15803d;border:3px solid ${ring};
+    box-shadow:0 2px 6px rgba(0,0,0,.5);
+    display:grid;place-items:center;overflow:hidden;cursor:default;
+  `
+
+  if (opts.avatarUrl) {
+    const img = document.createElement('img')
+    img.src = opts.avatarUrl
+    img.alt = ''
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;'
+    el.append(img)
+  } else {
+    el.innerHTML = `
+      <svg viewBox="0 0 24 24" width="${size * 0.66}" height="${size * 0.66}"
+           fill="none" stroke="#fff" stroke-width="2.1"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        ${FIGURES[DEFAULT_AVATAR]}
+      </svg>
+    `
+  }
+  return el
+}
+
+/**
  * Map marker element: the figure in a coloured badge, ringed in white so it
  * stays visible against both the pale basemap and the route lines.
  */

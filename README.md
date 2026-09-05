@@ -18,7 +18,8 @@ round your local park moves you ten kilometres down the road towards Madrid.
 | 3 | Land-first world route generation | done |
 | 4 | Journey map and progress (v1) | done |
 | 5 | City-to-city goals, multiple journeys | done |
-| 6 | Streaks, badges, group journeys | next |
+| 6 | Profiles, friends, Tag Along group mode | done |
+| 7 | Race and Scramble modes, badges | next |
 
 ## Stack
 

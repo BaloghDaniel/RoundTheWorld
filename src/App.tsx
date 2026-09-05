@@ -3,10 +3,12 @@ import { useAuth } from './lib/auth'
 import { fetchJourney, type Journey } from './lib/journey'
 import { fetchStravaStatus, type StravaStatus } from './lib/strava'
 import ConnectStrava from './routes/ConnectStrava'
+import FindFriends from './routes/FindFriends'
 import JourneyScreen from './routes/Journey'
 import Journeys from './routes/Journeys'
 import MapCheck from './routes/MapCheck'
 import Onboarding from './routes/Onboarding'
+import Profile from './routes/Profile'
 import SignIn from './routes/SignIn'
 
 function Spinner() {
@@ -21,7 +23,12 @@ function Spinner() {
   )
 }
 
-type View = { name: 'list' } | { name: 'new' } | { name: 'detail'; id: string }
+type View =
+  | { name: 'list' }
+  | { name: 'new' }
+  | { name: 'detail'; id: string }
+  | { name: 'profile' }
+  | { name: 'friends' }
 
 export default function App() {
   const { user, loading } = useAuth()
@@ -76,6 +83,19 @@ export default function App() {
     return <ConnectStrava onConnected={() => void fetchStravaStatus().then(setStrava)} />
   }
 
+  if (view.name === 'profile') {
+    return (
+      <Profile
+        onBack={() => setView({ name: 'list' })}
+        onFindFriends={() => setView({ name: 'friends' })}
+      />
+    )
+  }
+
+  if (view.name === 'friends') {
+    return <FindFriends onBack={() => setView({ name: 'profile' })} />
+  }
+
   if (view.name === 'new') {
     return (
       <Onboarding
@@ -95,6 +115,10 @@ export default function App() {
   }
 
   return (
-    <Journeys onOpen={(id) => void openJourney(id)} onNew={() => setView({ name: 'new' })} />
+    <Journeys
+      onOpen={(id) => void openJourney(id)}
+      onNew={() => setView({ name: 'new' })}
+      onProfile={() => setView({ name: 'profile' })}
+    />
   )
 }

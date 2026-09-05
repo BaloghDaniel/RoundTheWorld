@@ -2,6 +2,9 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import StravaBanner from '../components/StravaBanner'
 import { fetchJourney, formatKm, type Journey } from '../lib/journey'
 import { connectOutcome, fetchStravaStatus, syncStrava, type StravaStatus } from '../lib/strava'
+import Avatar from '../components/Avatar'
+import { fetchGroupState, type GroupState } from '../lib/social'
+import { supabase } from '../lib/supabase'
 
 // MapLibre is most of the bundle. Loading it only when a journey is on screen
 // keeps the sign-in and list screens light.
@@ -29,11 +32,23 @@ export default function JourneyScreen({
   const [message, setMessage] = useState<string | null>(null)
   const [focus, setFocus] = useState(0)
   const [strava, setStrava] = useState<StravaStatus | null>(null)
+  const [group, setGroup] = useState<GroupState | null>(null)
+  const [selfId, setSelfId] = useState<string | undefined>()
 
   const refresh = useCallback(async () => {
     const next = await fetchJourney(initial.journey_id)
     if (next) setJourney(next)
+    if (next?.group_id) setGroup(await fetchGroupState(next.group_id))
   }, [initial.journey_id])
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSelfId(data.session?.user.id))
+    if (journey.group_id) {
+      fetchGroupState(journey.group_id).then(setGroup).catch(() => setGroup(null))
+    }
+    // Only on mount and when the group changes; refresh() covers updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [journey.group_id])
 
   useEffect(() => {
     fetchStravaStatus().then(setStrava).catch(() => setStrava(null))
@@ -75,7 +90,12 @@ export default function JourneyScreen({
     // The map is the page. Everything else floats above it.
     <main className="relative h-dvh overflow-hidden">
       <Suspense fallback={<div className="absolute inset-0 animate-pulse bg-ink-soft" />}>
-        <JourneyMap journey={journey} focus={focus} />
+        <JourneyMap
+          journey={journey}
+          focus={focus}
+          party={group?.runners}
+          selfId={selfId}
+        />
       </Suspense>
 
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-between gap-3 p-3 pb-7">
@@ -209,6 +229,44 @@ export default function JourneyScreen({
                 hint={journey.completed ? 'goal reached' : eta ? 'at this pace' : 'log an activity'}
               />
             </div>
+
+            {group && group.runners.length > 1 && (
+              <div className="space-y-2 border-t border-white/10 pt-3">
+                <div className="flex items-center justify-between">
+                  <span className="eyebrow">Tagging along</span>
+                  <span className="text-[11px] text-slate-500">
+                    {formatKm(group.max_gap_m)} leash
+                  </span>
+                </div>
+                <ul className="space-y-1.5">
+                  {group.runners.map((r) => (
+                    <li key={r.user_id} className="flex items-center gap-2.5">
+                      <Avatar name={r.display_name} url={r.avatar_url} size={26} />
+                      <span className="min-w-0 flex-1 truncate text-sm text-slate-200">
+                        {r.display_name}
+                        {r.user_id === selfId && (
+                          <span className="ml-1 text-[11px] text-slate-500">you</span>
+                        )}
+                      </span>
+                      {r.waiting && (
+                        <span className="rounded bg-marker/20 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-marker">
+                          Waiting
+                        </span>
+                      )}
+                      <span className="readout text-sm">{formatKm(r.effective_m)}</span>
+                    </li>
+                  ))}
+                </ul>
+                {group.runners.some((r) => r.waiting) && (
+                  <p className="text-[11px] leading-relaxed text-slate-400">
+                    {group.runners.find((r) => r.waiting)?.display_name} is holding at the
+                    leash and banking{' '}
+                    {formatKm(group.runners.find((r) => r.waiting)?.held_back_m ?? 0)} — it
+                    counts as soon as the party closes up.
+                  </p>
+                )}
+              </div>
+            )}
 
             {journey.segment && journey.segment.mode !== 'road' && (
               <p className="rounded-xl bg-white/5 px-3 py-2 text-[11px] text-slate-400">

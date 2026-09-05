@@ -16,6 +16,9 @@ export type JourneySummary = {
   remaining_m: number
   laps: number
   created_at: string
+  group_id: string | null
+  group_mode: 'tag_along' | 'race' | 'scramble' | null
+  party_size: number
 }
 
 export type Journey = {
@@ -27,6 +30,9 @@ export type Journey = {
   completed: boolean
   origin_name: string | null
   destination_name: string | null
+  group_id: string | null
+  group_mode: 'tag_along' | 'race' | 'scramble' | null
+  max_gap_m: number | null
   remaining_m: number
   pace_m_per_day: number
   /** Projected arrival at the current pace; null until there is any distance. */

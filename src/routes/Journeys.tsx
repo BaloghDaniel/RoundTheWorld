@@ -1,10 +1,24 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useAuth } from '../lib/auth'
+import Avatar from '../components/Avatar'
 import { deleteJourney, fetchJourneys, formatKm, type JourneySummary } from '../lib/journey'
+import {
+  fetchGroupInvites,
+  fetchMyProfile,
+  respondToGroupInvite,
+  type GroupInvite,
+  type Profile,
+} from '../lib/social'
 
 type Props = {
   onOpen: (id: string) => void
   onNew: () => void
+  onProfile: () => void
+}
+
+const MODE_LABEL: Record<GroupInvite['mode'], string> = {
+  tag_along: 'Tag along',
+  race: 'Race',
+  scramble: 'Scramble',
 }
 
 function ProgressBar({ pct, done }: { pct: number; done: boolean }) {
@@ -87,8 +101,9 @@ function JourneyCard({
   )
 }
 
-export default function Journeys({ onOpen, onNew }: Props) {
-  const { user, signOut } = useAuth()
+export default function Journeys({ onOpen, onNew, onProfile }: Props) {
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [invites, setInvites] = useState<GroupInvite[]>([])
   const [journeys, setJourneys] = useState<JourneySummary[] | null>(null)
   const [confirming, setConfirming] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
@@ -96,7 +111,14 @@ export default function Journeys({ onOpen, onNew }: Props) {
 
   const load = useCallback(async () => {
     try {
-      setJourneys(await fetchJourneys())
+      const [list, me, pending] = await Promise.all([
+        fetchJourneys(),
+        fetchMyProfile(),
+        fetchGroupInvites(),
+      ])
+      setJourneys(list)
+      setProfile(me)
+      setInvites(pending)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load your journeys')
       setJourneys([])
@@ -123,26 +145,24 @@ export default function Journeys({ onOpen, onNew }: Props) {
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col gap-5 px-4 py-6">
-      <header className="flex items-center gap-3">
+      <header className="glass flex items-center gap-3 px-3 py-2.5">
         <img
           src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
           alt=""
-          className="size-9 rounded-lg"
-          width={36}
-          height={36}
+          className="size-8 rounded-lg"
+          width={32}
+          height={32}
         />
-        <div className="min-w-0">
-          <h1 className="font-semibold tracking-tight text-white">Your journeys</h1>
-          <p className="truncate text-xs text-slate-500">
-            {user?.user_metadata?.full_name ?? user?.email}
-          </p>
-        </div>
+        <h1 className="min-w-0 flex-1 truncate font-semibold tracking-tight text-white">
+          Your journeys
+        </h1>
         <button
           type="button"
-          onClick={() => void signOut()}
-          className="ml-auto shrink-0 rounded-lg border border-white/15 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-white/5"
+          onClick={onProfile}
+          aria-label="Your profile"
+          className="shrink-0 rounded-full ring-1 ring-white/15 transition hover:ring-white/40"
         >
-          Sign out
+          <Avatar name={profile?.display_name} url={profile?.avatar_url} size={34} />
         </button>
       </header>
 
@@ -150,6 +170,54 @@ export default function Journeys({ onOpen, onNew }: Props) {
         <p role="alert" className="glass px-4 py-3 text-sm text-red-300">
           {error}
         </p>
+      )}
+
+      {invites.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="eyebrow px-1">Invitations</h2>
+          <ul className="space-y-2">
+            {invites.map((invite) => (
+              <li key={invite.group_id} className="glass px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <Avatar name={invite.invited_by_name} url={invite.invited_by_avatar} size={36} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm text-white">
+                      {invite.invited_by_name} invited you
+                    </div>
+                    <div className="truncate text-xs text-slate-500">
+                      {MODE_LABEL[invite.mode]} · {invite.route_name} ·{' '}
+                      {formatKm(invite.total_distance_m)}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const today = new Date().toISOString().slice(0, 10)
+                      const id = await respondToGroupInvite(invite.group_id, true, today)
+                      await load()
+                      if (id) onOpen(id)
+                    }}
+                    className="flex-1 rounded-xl bg-route px-3 py-2 text-xs font-bold uppercase tracking-wide text-ink"
+                  >
+                    Tag along
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await respondToGroupInvite(invite.group_id, false, '2026-01-01')
+                      await load()
+                    }}
+                    className="rounded-xl border border-white/15 px-3 py-2 text-xs text-slate-300"
+                  >
+                    Decline
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {journeys === null ? (
