@@ -107,10 +107,18 @@ reintroduce the bug.
 
 ## Third-party limits worth remembering
 
-- **Strava caps the whole application**, not each user. Currently upgraded to
-  **10 athletes**; beyond that needs Strava's app review. Rate limit is 100
-  non-upload requests / 15 min, which is why sync is debounced to 15 minutes.
-  Disconnecting must delete the tokens *and* the activities — their terms.
+- **Strava caps the whole application**, not each user. Currently on the
+  10-athlete Standard Tier; beyond that needs Strava's app review. Rate limit is
+  100 non-upload requests / 15 min, which is why sync is debounced to 15
+  minutes. Disconnecting must delete the tokens *and* the activities — their
+  terms.
+- **The Standard Tier requires an active Strava subscription on the account
+  that owns the app.** Without one Strava deactivates the whole application and
+  returns 403 `{"code":"inactive"}` on every call, for every athlete. OAuth
+  still succeeds, so accounts appear connected and only syncing fails —
+  which reads like a per-user problem and is not. `classify403` in
+  `_shared/strava.ts` turns this into a 503 with `reason: 'app_inactive'`
+  rather than a raw 502.
 - **ORS** refuses any single request over 6,000 km or 50 waypoints.
   `routeWaypoints` halves an oversized stage and stitches the halves.
   Error 2009 = no route, 2010 = a waypoint is not near a road, 2004 = too long.

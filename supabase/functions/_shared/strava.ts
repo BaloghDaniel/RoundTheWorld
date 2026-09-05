@@ -19,6 +19,37 @@ export const COUNTED_SPORT_TYPES = new Set([
   'VirtualRide',
 ])
 
+/**
+ * Strava has deactivated the whole application.
+ *
+ * The Standard Tier requires an active Strava subscription on the account that
+ * owns the API application. Without one Strava returns 403 with code
+ * "inactive" on every call, for every connected athlete -- so this is a
+ * developer-side billing problem, not anything the user did.
+ */
+export class StravaAppInactiveError extends Error {}
+
+/** More athletes are connected than the application's tier allows. */
+export class StravaAthleteLimitError extends Error {}
+
+/** Turn a 403 body into the specific reason, when Strava gives one. */
+function classify403(body: string): Error {
+  const lower = body.toLowerCase()
+  if (lower.includes('inactive')) {
+    return new StravaAppInactiveError(
+      'Strava has deactivated this application. The Standard Tier requires an ' +
+        'active Strava subscription on the account that owns the app; ' +
+        'subscribe, then reactivate the app in Strava API settings.',
+    )
+  }
+  if (lower.includes('athlete') || lower.includes('limit')) {
+    return new StravaAthleteLimitError(
+      'This application has more connected athletes than its Strava tier allows.',
+    )
+  }
+  return new Error(`Strava refused the request (403): ${body}`)
+}
+
 export type StravaTokens = {
   access_token: string
   refresh_token: string
@@ -52,7 +83,9 @@ async function postToken(body: Record<string, string>): Promise<StravaTokens> {
     body: JSON.stringify({ ...credentials(), ...body }),
   })
   if (!res.ok) {
-    throw new Error(`Strava token request failed (${res.status}): ${await res.text()}`)
+    const text = await res.text()
+    if (res.status === 403) throw classify403(text)
+    throw new Error(`Strava token request failed (${res.status}): ${text}`)
   }
   return res.json()
 }
@@ -89,7 +122,12 @@ export async function listActivities(
       headers: { authorization: `Bearer ${accessToken}` },
     })
     if (!res.ok) {
-      throw new Error(`Strava activities request failed (${res.status}): ${await res.text()}`)
+      const body = await res.text()
+      if (res.status === 403) throw classify403(body)
+      if (res.status === 429) {
+        throw new Error('Strava rate limit reached. Try again in fifteen minutes.')
+      }
+      throw new Error(`Strava activities request failed (${res.status}): ${body}`)
     }
 
     const batch: StravaActivity[] = await res.json()

@@ -4,7 +4,13 @@
 // because the journey is drawn on our own route geometry.
 
 import { adminClient, callerId, corsHeaders, json } from '../_shared/http.ts'
-import { COUNTED_SPORT_TYPES, listActivities, refresh } from '../_shared/strava.ts'
+import {
+  COUNTED_SPORT_TYPES,
+  listActivities,
+  refresh,
+  StravaAppInactiveError,
+  StravaAthleteLimitError,
+} from '../_shared/strava.ts'
 
 // Strava permits 100 non-upload requests per 15 minutes. Syncing more often
 // than this achieves nothing: activities do not appear that fast.
@@ -49,19 +55,25 @@ Deno.serve(async (req) => {
           expires_at: new Date(next.expires_at * 1000).toISOString(),
         })
         .eq('user_id', userId)
-    } catch {
-      // A dead refresh token means the user revoked access on Strava's side.
+    } catch (err) {
+      if (err instanceof StravaAppInactiveError) {
+        return json({ error: err.message, reason: 'app_inactive' }, 503)
+      }
+      // Otherwise a dead refresh token means the user revoked access.
       return json({ error: 'Strava authorisation expired, reconnect required' }, 401)
     }
   }
 
   // Sync back to the start of the active journey, so a journey backdated at
   // onboarding picks up the history it needs.
+  // The earliest journey wins: several journeys can be running at once, each
+  // with its own start date, and one fetch has to satisfy all of them.
   const { data: journey } = await db
     .from('journeys')
     .select('activities_from')
     .eq('user_id', userId)
-    .eq('is_active', true)
+    .order('activities_from', { ascending: true })
+    .limit(1)
     .maybeSingle()
 
   const from = journey?.activities_from
@@ -73,6 +85,12 @@ Deno.serve(async (req) => {
   try {
     activities = await listActivities(accessToken, afterEpoch)
   } catch (err) {
+    if (err instanceof StravaAppInactiveError) {
+      return json({ error: err.message, reason: 'app_inactive' }, 503)
+    }
+    if (err instanceof StravaAthleteLimitError) {
+      return json({ error: err.message, reason: 'athlete_limit' }, 503)
+    }
     return json({ error: err instanceof Error ? err.message : 'Strava request failed' }, 502)
   }
 
